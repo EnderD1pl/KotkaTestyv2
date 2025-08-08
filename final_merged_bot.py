@@ -2227,7 +2227,7 @@ async def unban(ctx, user_id: str):
 
 @app_commands.guild_only()
 @bot.tree.command(name="setlogchannel", description=get_command_description("setlogchannel"))
-@app_commands.describe(channel="Log channel")
+@app_commands.describe(channel=get_parameter_description("log_channel"))
 async def setlogchannel(ctx, channel: discord.TextChannel):
     if not await check_changelog_and_module(ctx, "moderation"):
         return
@@ -2245,7 +2245,7 @@ async def setlogchannel(ctx, channel: discord.TextChannel):
 
 @app_commands.guild_only()
 @bot.tree.command(name="setwelcomechannel", description=get_command_description("setwelcomechannel"))
-@app_commands.describe(channel="Welcome channel")
+@app_commands.describe(channel=get_parameter_description("welcome_channel"))
 async def setwelcomechannel(ctx, channel: discord.TextChannel):
     if not await check_changelog_and_module(ctx, "moderation"):
         return
@@ -2263,7 +2263,7 @@ async def setwelcomechannel(ctx, channel: discord.TextChannel):
 
 @app_commands.guild_only()
 @bot.tree.command(name="setcounterchannel", description=get_command_description("setcounterchannel"))
-@app_commands.describe(channel="Counting channel")
+@app_commands.describe(channel=get_parameter_description("counting_channel"))
 async def setcounterchannel(ctx, channel: discord.TextChannel):
     if not await check_changelog_and_module(ctx, "moderation"):
         return
@@ -2284,7 +2284,7 @@ async def setcounterchannel(ctx, channel: discord.TextChannel):
 
 @app_commands.guild_only()
 @bot.tree.command(name="setpingchannel", description=get_command_description("setpingchannel"))
-@app_commands.describe(channel="Ping channel")
+@app_commands.describe(channel=get_parameter_description("ping_channel"))
 async def setpingchannel(ctx, channel: discord.TextChannel):
     if not await check_changelog_and_module(ctx, "moderation"):
         return
@@ -3289,7 +3289,7 @@ async def stop_command(interaction: discord.Interaction):
 
 @app_commands.guild_only()
 @bot.tree.command(name="seteconlogs", description=get_command_description("seteconlogs"))
-@app_commands.describe(channel="Text channel for economy logs")
+@app_commands.describe(channel=get_parameter_description("econlogs_channel"))
 async def set_econlogs(inter: discord.Interaction, channel: discord.TextChannel):
     if not await check_changelog_and_module(inter, "economy"):
         return
@@ -3325,7 +3325,7 @@ async def balance_cmd(inter: discord.Interaction):
 
 @app_commands.guild_only()
 @bot.tree.command(name="deposit", description=get_command_description("deposit"))
-@app_commands.describe(amount="Amount to deposit")
+@app_commands.describe(amount=get_parameter_description("amount_deposit"))
 async def deposit_cmd(inter: discord.Interaction, amount: int):
     if not await check_changelog_and_module(inter, "economy"):
         return
@@ -3346,7 +3346,7 @@ async def deposit_cmd(inter: discord.Interaction, amount: int):
 
 @app_commands.guild_only()
 @bot.tree.command(name="withdraw", description=get_command_description("withdraw"))
-@app_commands.describe(amount="Amount to withdraw")
+@app_commands.describe(amount=get_parameter_description("amount_withdraw"))
 async def withdraw_cmd(inter: discord.Interaction, amount: int):
     if not await check_changelog_and_module(inter, "economy"):
         return
@@ -3366,7 +3366,7 @@ async def withdraw_cmd(inter: discord.Interaction, amount: int):
 
 @app_commands.guild_only()
 @bot.tree.command(name="admin_add", description=get_command_description("admin_add"))
-@app_commands.describe(user="User", amount="Amount", konto="balance/bank")
+@app_commands.describe(user=get_parameter_description("user"), amount=get_parameter_description("amount"), konto=get_parameter_description("konto"))
 async def admin_add(inter: discord.Interaction, user: discord.Member, amount: int, konto: str):
     if not await check_changelog_and_module(inter, "economy"):
         return
@@ -3385,7 +3385,7 @@ async def admin_add(inter: discord.Interaction, user: discord.Member, amount: in
 
 @app_commands.guild_only()
 @bot.tree.command(name="admin_remove", description=get_command_description("admin_remove"))
-@app_commands.describe(user="User", amount="Amount", konto="balance/bank")
+@app_commands.describe(user=get_parameter_description("user"), amount=get_parameter_description("amount"), konto=get_parameter_description("konto"))
 async def admin_remove(inter: discord.Interaction, user: discord.Member, amount: int, konto: str):
     if not await check_changelog_and_module(inter, "economy"):
         return
@@ -3407,7 +3407,7 @@ async def admin_remove(inter: discord.Interaction, user: discord.Member, amount:
 
 @app_commands.guild_only()
 @bot.tree.command(name="admin_setincome", description=get_command_description("admin_setincome"))
-@app_commands.describe(role="Role", amount="Daily income amount")
+@app_commands.describe(role=get_parameter_description("role"), amount=get_parameter_description("income_amount"))
 async def admin_setincome(inter: discord.Interaction, role: discord.Role, amount: int):
     if not await check_changelog_and_module(inter, "economy"):
         return
@@ -3445,7 +3445,7 @@ async def admin_listincome(inter: discord.Interaction):
 
 @app_commands.guild_only()
 @bot.tree.command(name="admin_removeincome", description=get_command_description("admin_removeincome"))
-@app_commands.describe(role="Role")
+@app_commands.describe(role=get_parameter_description("role"))
 async def admin_removeincome(inter: discord.Interaction, role: discord.Role):
     if not await check_changelog_and_module(inter, "economy"):
         return
@@ -3518,7 +3518,7 @@ async def work_cmd(inter: discord.Interaction):
 
 @app_commands.guild_only()
 @bot.tree.command(name="setwork", description=get_command_description("setwork"))
-@app_commands.describe(min="Min", max="Max")
+@app_commands.describe(min=get_parameter_description("min_amount"), max=get_parameter_description("max_amount"))
 async def setwork_cmd(inter: discord.Interaction, min: int, max: int):
     if not await check_changelog_and_module(inter, "economy"):
         return
@@ -3537,7 +3537,7 @@ async def setwork_cmd(inter: discord.Interaction, min: int, max: int):
 
 @app_commands.guild_only()
 @bot.tree.command(name="steal", description=get_command_description("steal"))
-@app_commands.describe(user="Who to steal from?")
+@app_commands.describe(user=get_parameter_description("steal_target"))
 async def steal_cmd(inter: discord.Interaction, user: discord.Member):
     if not await check_changelog_and_module(inter, "economy"):
         return
@@ -3587,7 +3587,7 @@ async def steal_cmd(inter: discord.Interaction, user: discord.Member):
 
 @app_commands.guild_only()
 @bot.tree.command(name="check", description=get_command_description("check"))
-@app_commands.describe(user="User", show_bank="Show bank balance (admin only)")
+@app_commands.describe(user=get_parameter_description("user"), show_bank=get_parameter_description("show_bank"))
 async def check_cmd(inter: discord.Interaction, user: discord.Member, show_bank: bool = False):
     if not await check_changelog_and_module(inter, "economy"):
         return
@@ -3851,7 +3851,7 @@ def rps_winner(a, b):
 
 @app_commands.guild_only()
 @bot.tree.command(name="rps", description=get_command_description("rps"))
-@app_commands.describe(amount="Amount", user="Opponent (optional)")
+@app_commands.describe(amount=get_parameter_description("amount"), user=get_parameter_description("opponent"))
 async def rps_cmd(inter: discord.Interaction, amount: int, user: Optional[discord.Member] = None):
     if not await check_changelog_and_module(inter, "economy"):
         return
@@ -3998,7 +3998,7 @@ class CFView(ui.View):
 
 @app_commands.guild_only()
 @bot.tree.command(name="cf", description=get_command_description("cf"))
-@app_commands.describe(amount="Amount", side="Side: heads/tails", user="Opponent (optional)")
+@app_commands.describe(amount=get_parameter_description("amount"), side=get_parameter_description("side"), user=get_parameter_description("opponent"))
 async def cf_cmd(inter: discord.Interaction, amount: int, side: str, user: Optional[discord.Member] = None):
     if not await check_changelog_and_module(inter, "economy"):
         return
@@ -4151,7 +4151,7 @@ class RouletteView(ui.View):
 
 @app_commands.guild_only()
 @bot.tree.command(name="roulette", description=get_command_description("roulette"))
-@app_commands.describe(amount="Amount")
+@app_commands.describe(amount=get_parameter_description("amount"))
 async def roulette_cmd(inter: discord.Interaction, amount: int):
     if not await check_changelog_and_module(inter, "economy"):
         return
@@ -4314,7 +4314,7 @@ class BlackjackView(ui.View):
 
 @app_commands.guild_only()
 @bot.tree.command(name="blackjack", description=get_command_description("blackjack"))
-@app_commands.describe(amount="Amount")
+@app_commands.describe(amount=get_parameter_description("amount"))
 async def blackjack_cmd(inter: discord.Interaction, amount: int):
     if not await check_changelog_and_module(inter, "economy"):
         return
@@ -4548,7 +4548,7 @@ class MinesView(ui.View):
 
 @app_commands.guild_only()
 @bot.tree.command(name="mines", description=get_command_description("mines"))
-@app_commands.describe(amount="Amount", mines="Number of mines (1-20)")
+@app_commands.describe(amount=get_parameter_description("amount"), mines=get_parameter_description("mines"))
 async def mines_cmd(inter: discord.Interaction, amount: int, mines: int):
     if not await check_changelog_and_module(inter, "economy"):
         return
@@ -4596,7 +4596,7 @@ class ShopItem(app_commands.Choice):
 
 @app_commands.guild_only()
 @bot.tree.command(name="admin_shopadd", description=get_command_description("admin_shopadd"))
-@app_commands.describe(role="Role to buy", price="Price", alias="Alias/shortcut to use in /buy")
+@app_commands.describe(role=get_parameter_description("role_to_buy"), price=get_parameter_description("price"), alias=get_parameter_description("alias"))
 @app_commands.checks.has_permissions(administrator=True)
 async def shopadd_cmd(inter: discord.Interaction, role: discord.Role, price: int, alias: str):
     if not await check_changelog_and_module(inter, "economy"):
@@ -4625,7 +4625,7 @@ async def shopadd_cmd(inter: discord.Interaction, role: discord.Role, price: int
 
 @app_commands.guild_only()
 @bot.tree.command(name="admin_shopremove", description=get_command_description("admin_shopremove"))
-@app_commands.describe(alias="Role alias to remove")
+@app_commands.describe(alias=get_parameter_description("alias_remove"))
 @app_commands.checks.has_permissions(administrator=True)
 async def shopremove_cmd(inter: discord.Interaction, alias: str):
     if not await check_changelog_and_module(inter, "economy"):
@@ -4686,7 +4686,7 @@ class BuyAliasAutocomplete(app_commands.Transform):
 
 @app_commands.guild_only()
 @bot.tree.command(name="buy", description=get_command_description("buy"))
-@app_commands.describe(alias="Role alias to buy (use /shop to see list)")
+@app_commands.describe(alias=get_parameter_description("alias_buy"))
 @app_commands.autocomplete(alias=BuyAliasAutocomplete.autocomplete)
 async def buy_cmd(inter: discord.Interaction, alias: str):
     if not await check_changelog_and_module(inter, "economy"):
@@ -5011,7 +5011,7 @@ def format_time(dt_str):
     return dt.strftime("%Y-%m-%d %H:%M")
 
 @bot.tree.command(name="shortenlink", description=get_command_description("shortenlink"))
-@app_commands.describe(url="Link to shorten", custom="Custom ending (optional, e.g. 'my link')")
+@app_commands.describe(url=get_parameter_description("url"), custom=get_parameter_description("custom"))
 async def shorten(interaction: discord.Interaction, url: str, custom: str = None):
     user_id = str(interaction.user.id)
     username = str(interaction.user.name)
@@ -5107,7 +5107,7 @@ async def extend(interaction: discord.Interaction, short: str, days: int = None,
         await interaction.response.send_message(error_text, ephemeral=True)
 
 @bot.tree.command(name="deletelink", description=get_command_description("deletelink"))
-@app_commands.describe(short="Short code of your link")
+@app_commands.describe(short=get_parameter_description("short"))
 async def delete(interaction: discord.Interaction, short: str):
     user_id = str(interaction.user.id)
     data = {

@@ -1494,6 +1494,26 @@
     "log_channel": "Log channel",
     "welcome_channel": "Welcome channel",
     "counting_channel": "Counting channel",
-    "ping_channel": "Ping channel"
+    "ping_channel": "Ping channel",
+    "konto": "Account type (balance/bank)",
+    "econlogs_channel": "Economy logs channel",
+    "amount_deposit": "Amount to deposit",
+    "amount_withdraw": "Amount to withdraw",
+    "income_amount": "Daily income amount",
+    "min_amount": "Minimum amount",
+    "max_amount": "Maximum amount",
+    "steal_target": "Who to steal from?",
+    "show_bank": "Show bank balance (admin only)",
+    "opponent": "Opponent (optional)",
+    "side": "Side: heads/tails",
+    "mines": "Number of mines (1-20)",
+    "role_to_buy": "Role to buy",
+    "price": "Price",
+    "alias": "Alias/shortcut to use",
+    "alias_remove": "Role alias to remove",
+    "alias_buy": "Role alias to buy (use /shop to see list)",
+    "url": "Link to shorten",
+    "custom": "Custom ending (optional)",
+    "short": "Short code of your link"
   }
 }
