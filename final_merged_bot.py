@@ -4290,7 +4290,7 @@ class BlackjackView(ui.View):
         blackjack_title = translation_manager.get_text("gambling.blackjack_title", self.player.id, self.guild_id)
         embed = Embed(
             title=blackjack_title,
-            description=translation_manager.get_text("gambling.blackjack_cards", hand=self.p_hand, value=pv, dealer=dv),
+            description=translation_manager.get_text("gambling.blackjack_cards", self.player.id, self.guild_id, hand=self.p_hand, value=pv, dealer=dv),
             color=0x3366ff
         )
         await self.msg.edit(embed=embed, view=self)
