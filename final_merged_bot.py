@@ -1643,9 +1643,9 @@ async def setchangelogchannel(ctx, channel: discord.TextChannel):
     await log_action(ctx.guild,"SetChangelogChannel",ctx.user, executor=ctx.user)
     guild = bot.get_guild(int(ctx.guild.id))
     channel = guild.get_channel(channel.id)
-    title_welcome = translation_manager.get_text("welcome.title")
-    description_changelog = translation_manager.get_text("welcome.changelog_set")
-    footer_welcome = translation_manager.get_text("welcome.footer")
+    title_welcome = translation_manager.get_text("welcome.title", ctx.user.id, ctx.guild.id)
+    description_changelog = translation_manager.get_text("welcome.changelog_set", ctx.user.id, ctx.guild.id)
+    footer_welcome = translation_manager.get_text("welcome.footer", ctx.user.id, ctx.guild.id)
     
     embed = discord.Embed(
         title=title_welcome,
@@ -1666,6 +1666,10 @@ async def naptime(interaction: discord.Interaction):
     blocking_msg = translation_manager.get_text("bot_management.blocking_channels", interaction.user.id, interaction.guild_id)
     await interaction.response.send_message(blocking_msg, ephemeral=True)
 
+    # Block AI globally (including DMs)
+    global bot_locked
+    bot_locked = True
+
     # Lock AI channels
     ai_config = load_ai_channel_config()
     for guild_id, channel_id in ai_config.items():
@@ -1674,7 +1678,7 @@ async def naptime(interaction: discord.Interaction):
             channel = guild.get_channel(channel_id)
             if channel:
                 try:
-                    maintenance_msg = translation_manager.get_text("ai.maintenance_block")
+                    maintenance_msg = translation_manager.get_text("ai.maintenance_block", None, int(guild_id))
                     await channel.send(maintenance_msg)
                     await channel.set_permissions(guild.default_role, send_messages=False)  
                 except Exception as e:
@@ -1682,7 +1686,7 @@ async def naptime(interaction: discord.Interaction):
                     print(error_msg)
         bot_locked_per_guild[int(guild_id)] = True
     changelog_channels = load_channel_data("changelog")
-    maintenance_title = translation_manager.get_text("bot_management.maintenance_title")
+    maintenance_title = translation_manager.get_text("bot_management.maintenance_title", interaction.user.id, interaction.guild_id)
     embed = discord.Embed(
         title=maintenance_title,
         color=discord.Color.yellow(),
@@ -1711,6 +1715,10 @@ async def wakeywakey(interaction: discord.Interaction):
     unblocking_msg = translation_manager.get_text("bot_management.unblocking_channels", interaction.user.id, interaction.guild_id)
     await interaction.response.send_message(unblocking_msg, ephemeral=True)
 
+    # Unblock AI globally (including DMs)
+    global bot_locked
+    bot_locked = False
+
     # Unlock AI channels
     ai_config = load_ai_channel_config()
     for guild_id, channel_id in ai_config.items():
@@ -1720,14 +1728,14 @@ async def wakeywakey(interaction: discord.Interaction):
             if channel:
                 try:
                     await channel.set_permissions(guild.default_role, send_messages=None)
-                    maintenance_complete_msg = translation_manager.get_text("ai.maintenance_unblock")
+                    maintenance_complete_msg = translation_manager.get_text("ai.maintenance_unblock", None, int(guild_id))
                     await channel.send(maintenance_complete_msg)
                 except Exception as e:
                     error_msg = translation_manager.get_text("tempmail.unblock_channel_error", guild_id=guild_id, error=str(e))
                     print(error_msg)
         bot_locked_per_guild[int(guild_id)] = False
     changelog_channels = load_channel_data("changelog")
-    maintenance_completed_title = translation_manager.get_text("bot_management.maintenance_completed")
+    maintenance_completed_title = translation_manager.get_text("bot_management.maintenance_completed", interaction.user.id, interaction.guild_id)
     embed = discord.Embed(
         title=maintenance_completed_title,
         color=discord.Color.dark_green(),
@@ -4112,21 +4120,21 @@ class RouletteView(ui.View):
         if win:
             reward = self.bet * mult
             eco['balance'] += reward
-            roulette_title = translation_manager.get_text("gambling.roulette_title", None, None)
-            roulette_win_text = translation_manager.get_text("gambling.roulette_desc_win", None, None, color=win_color.upper(), amount=reward - self.bet, result=wheel[spin_idx])
+            roulette_title = translation_manager.get_text("gambling.roulette_title", self.user.id, self.guild_id)
+            roulette_win_text = translation_manager.get_text("gambling.roulette_desc_win", self.user.id, self.guild_id, color=win_color.upper(), amount=reward - self.bet, result=wheel[spin_idx])
             embed = Embed(title=roulette_title, description=roulette_win_text, color=0x22dd66)
         else:
             lost = int(self.bet * 0.9)
             eco['balance'] += self.bet - lost
-            roulette_title = translation_manager.get_text("gambling.roulette_title", None, None)
-            roulette_lose_text = translation_manager.get_text("gambling.roulette_desc_lose", None, None, color=win_color.upper(), amount=lost, result=wheel[spin_idx])
+            roulette_title = translation_manager.get_text("gambling.roulette_title", self.user.id, self.guild_id)
+            roulette_lose_text = translation_manager.get_text("gambling.roulette_desc_lose", self.user.id, self.guild_id, color=win_color.upper(), amount=lost, result=wheel[spin_idx])
             embed = Embed(title=roulette_title, description=roulette_lose_text, color=0xdd2222)
         update_user_eco(self.guild_id, self.user.id, eco)
         if win:
-            log_msg = translation_manager.get_text("logging.gambling_roulette_win", None, None, user=self.user.mention, color=color, amount=reward - self.bet)
+            log_msg = translation_manager.get_text("logging.gambling_roulette_win", self.user.id, self.guild_id, user=self.user.mention, color=color, amount=reward - self.bet)
             log_econ(self.guild_id, log_msg, self.user.id)
         else:
-            log_msg = translation_manager.get_text("logging.gambling_roulette_loss", None, None, user=self.user.mention, color=color, amount=lost)
+            log_msg = translation_manager.get_text("logging.gambling_roulette_loss", self.user.id, self.guild_id, user=self.user.mention, color=color, amount=lost)
             log_econ(self.guild_id, log_msg, self.user.id)
         
         await self.msg.edit(content=None, embed=embed, view=None)
@@ -4297,7 +4305,7 @@ class BlackjackView(ui.View):
 
     async def on_timeout(self):
         try:
-            timeout_text = translation_manager.get_text("gambling.blackjack_timeout")
+            timeout_text = translation_manager.get_text("gambling.blackjack_timeout", self.player.id, self.guild_id)
             await self.msg.edit(embed=Embed(description=timeout_text, color=0xFFA500), view=None)
             eco = get_user_eco(self.guild_id, self.player.id)
             eco['balance'] += int(self.bet * 0.5)

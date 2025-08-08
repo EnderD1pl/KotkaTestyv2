@@ -1315,7 +1315,8 @@
     "title": "Announcement",
     "description": "Send announcement to all changelog channels",
     "message": "Announcement content",
-    "sent": "Announcement sent to {count} servers"
+    "sent": "Announcement sent to {count} servers",
+    "footer": "Announcement by {user}"
   },
   "messages": {
     "new_mail": "New message for {user_id} on {addr}: {count} emails.",

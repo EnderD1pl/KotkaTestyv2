@@ -964,7 +964,8 @@
     "title": "Ogłoszenie",
     "description": "Wyślij ogłoszenie na wszystkie kanały changelog",
     "message": "Treść ogłoszenia",
-    "sent": "Ogłoszenie wysłane na {count} serwerów"
+    "sent": "Ogłoszenie wysłane na {count} serwerów",
+    "footer": "Ogłoszenie od {user}"
   },
   "messages": {
     "new_mail": "Nowa wiadomość dla {user_id} na {addr}: {count} maili.",
