@@ -634,12 +634,9 @@ async def test_lang(interaction: discord.Interaction):
     embed = discord.Embed(title=test_title, color=discord.Color.blue())
     current_lang_text = translation_manager.get_text("general.current_language", user_id, guild_id)
     embed.add_field(name=current_lang_text, value=current_lang, inline=False)
-    success_text = translation_manager.get_text("general.success", interaction.user.id, interaction.guild_id)
-    embed.add_field(name=success_text, value=test_text, inline=False)
-    help_title_label = translation_manager.get_text("help.title", interaction.user.id, interaction.guild_id)
-    embed.add_field(name=help_title_label, value=help_title, inline=False)
-    faq_title_label = translation_manager.get_text("faq.title", interaction.user.id, interaction.guild_id)
-    embed.add_field(name=faq_title_label, value=faq_title, inline=False)
+    embed.add_field(name="general.success", value=test_text, inline=False)
+    embed.add_field(name="help.title", value=help_title, inline=False)
+    embed.add_field(name="faq.title", value=faq_title, inline=False)
     
     await interaction.response.send_message(embed=embed, ephemeral=True)
 
@@ -692,8 +689,8 @@ async def refreshusers(interaction: discord.Interaction):
 
 @bot.tree.command(name="language", description=get_command_description("language"))
 @app_commands.describe(
-    language=get_parameter_description("language"),
-    scope=get_parameter_description("scope")
+    language="Choose language (Polish/English)",
+    scope="Language change scope (Personal/Server - admin only)"
 )
 @app_commands.choices(language=[
     app_commands.Choice(name=translation_manager.get_text("language.polish_choice", None, None), value="pl"),
@@ -1627,7 +1624,7 @@ async def setaichannel(interaction: discord.Interaction, channel: discord.TextCh
 
 @app_commands.guild_only()
 @bot.tree.command(name="setchangelogchannel", description=get_command_description("setchangelogchannel"))
-@app_commands.describe(channel=get_parameter_description("changelog_channel"))
+@app_commands.describe(channel="Changelog channel")
 async def setchangelogchannel(ctx, channel: discord.TextChannel):
     if not ctx.user.guild_permissions.administrator:
         no_perms_msg = translation_manager.get_text("general.no_permissions_short", ctx.user.id, ctx.guild.id)
@@ -1806,13 +1803,13 @@ async def changelog_cmd(interaction: discord.Interaction, version_type: str, add
     )
 
     if added:
-        added_text = translation_manager.get_text("changelog.added_text", None, None)
+        added_text = translation_manager.get_text("changelog.added", None, guild.id) if translation_manager.get_text("changelog.added", None, guild.id) != "[Missing: changelog.added]" else "➕ Dodano"
         embed.add_field(name=added_text, value=added, inline=False)
     if removed:
-        removed_text = translation_manager.get_text("changelog.removed_text", None, None)
+        removed_text = translation_manager.get_text("changelog.removed_text", None, guild.id)
         embed.add_field(name=removed_text, value=removed, inline=False)
     if fixed:
-        fixed_text = translation_manager.get_text("changelog.fixed_text", None, None)
+        fixed_text = translation_manager.get_text("changelog.fixed", None, guild.id) if translation_manager.get_text("changelog.fixed", None, guild.id) != "[Missing: changelog.fixed]" else "🔧 Naprawiono"
         embed.add_field(name=fixed_text, value=fixed, inline=False)
 
     embed.set_footer(text=f"Changelog by {interaction.user.display_name}")
@@ -1840,7 +1837,7 @@ async def changelog_cmd(interaction: discord.Interaction, version_type: str, add
 
 
 @bot.tree.command(name="announce", description=get_command_description("announce"))
-@app_commands.describe(message=get_parameter_description("message"))
+@app_commands.describe(message="Announcement content")
 async def announce_cmd(interaction: discord.Interaction, message: str):
     if interaction.user.id not in AUTHORIZED_USERS:
         no_perms_text = translation_manager.get_text("general.no_command_permissions", interaction.user.id, interaction.guild_id)
@@ -1882,7 +1879,7 @@ async def announce_cmd(interaction: discord.Interaction, message: str):
 
 @app_commands.guild_only()
 @bot.tree.command(name="setperms", description=get_command_description("setperms"))
-@app_commands.describe(role=get_parameter_description("role"), permissions=get_parameter_description("permissions"))
+@app_commands.describe(role="Role", permissions="warn,ban,kick,timeout")
 async def setperms(ctx, role: discord.Role, permissions: str):
     if not await check_changelog_and_module(ctx, "moderation"):
         return
@@ -1922,7 +1919,7 @@ async def setperms(ctx, role: discord.Role, permissions: str):
 
 @app_commands.guild_only()
 @bot.tree.command(name="revokeperms", description=get_command_description("revokeperms"))
-@app_commands.describe(role=get_parameter_description("role"), permissions=get_parameter_description("permissions"))
+@app_commands.describe(role="Role", permissions="warn,ban,kick,timeout")
 async def revokeperms(ctx, role: discord.Role, permissions: str):
     if not await check_changelog_and_module(ctx, "moderation"):
         return
@@ -1999,7 +1996,7 @@ async def permslist(ctx):
 
 @app_commands.guild_only()
 @bot.tree.command(name="warn", description=get_command_description("warn"))
-@app_commands.describe(user=get_parameter_description("user"), reason=get_parameter_description("reason"))
+@app_commands.describe(user="User", reason="Reason")
 async def warn(ctx, user: discord.Member, reason: str):
     if not await check_changelog_and_module(ctx, "moderation"):
         return
@@ -2131,12 +2128,8 @@ async def ban(ctx, user: discord.Member, reason: str = None, time: str = None):
             return await ctx.followup.send(embed=discord.Embed(description=invalid_format_text, color=discord.Color.red()))
     await user.ban(reason=reason or "")
     text = translation_manager.get_text("moderation.user_banned_text", ctx.user.id, ctx.guild.id, user=user.mention)
-    if reason: 
-        reason_text = translation_manager.get_text("general.reason", ctx.user.id, ctx.guild.id)
-        text += f" {reason_text}: {reason}"
-    if temp: 
-        time_text = translation_manager.get_text("general.duration", ctx.user.id, ctx.guild.id)
-        text += f"\n{time_text}: {time}"
+    if reason: text+=f" za: {reason}"
+    if temp: text+=f"\nCzas: {time}"
     embed=discord.Embed(description=text,color=discord.Color.orange())
     await ctx.followup.send(embed=embed)
     await log_action(ctx.guild,"Ban",user,reason, time if temp else None, executor=ctx.user)
@@ -2148,7 +2141,7 @@ async def ban(ctx, user: discord.Member, reason: str = None, time: str = None):
 
 @app_commands.guild_only()
 @bot.tree.command(name="kick", description=get_command_description("kick"))
-@app_commands.describe(user=get_parameter_description("user"), reason=get_parameter_description("reason"))
+@app_commands.describe(user="User", reason="Reason")
 async def kick(ctx, user: discord.Member, reason: str = None):
     if not await check_changelog_and_module(ctx, "moderation"):
         return
@@ -2158,9 +2151,7 @@ async def kick(ctx, user: discord.Member, reason: str = None):
     await ctx.response.defer()
     await user.kick(reason=reason or "")
     text = translation_manager.get_text("moderation.user_kicked_text", ctx.user.id, ctx.guild.id, user=user.mention)
-    if reason: 
-        reason_text = translation_manager.get_text("general.reason", ctx.user.id, ctx.guild.id)
-        text += f" {reason_text}: {reason}"
+    if reason: text+=f" za: {reason}"
     embed=discord.Embed(description=text,color=discord.Color.orange())
     await ctx.followup.send(embed=embed)
     await log_action(ctx.guild,"Kick",user,reason, executor=ctx.user)
@@ -2196,9 +2187,7 @@ async def timeout(ctx, user: discord.Member, time: str, reason: str = None):
         return await ctx.followup.send(embed=discord.Embed(description=invalid_format_text, color=discord.Color.red()))
     await user.timeout(dur,reason=reason or "")
     text = translation_manager.get_text("moderation.user_muted_text", ctx.user.id, ctx.guild.id, user=user.mention, time=time)
-    if reason: 
-        reason_text = translation_manager.get_text("general.reason", ctx.user.id, ctx.guild.id)
-        text += f" {reason_text}: {reason}"
+    if reason: text+=f" za: {reason}"
     embed=discord.Embed(description=text,color=discord.Color.orange())
     await ctx.followup.send(embed=embed)
     await log_action(ctx.guild,"Timeout",user,reason,time, executor=ctx.user)
@@ -2332,7 +2321,7 @@ async def unlock(ctx):
 
 @app_commands.guild_only()
 @bot.tree.command(name="purge", description=get_command_description("purge"))
-@app_commands.describe(amount=get_parameter_description("amount_1_100"))
+@app_commands.describe(amount="Amount (1-100)")
 async def purge(ctx, amount: int):
     if not await check_changelog_and_module(ctx, "moderation"):
         return
@@ -3061,7 +3050,7 @@ def is_youtube_url(url):
 
 @app_commands.guild_only()
 @bot.tree.command(name="play", description=get_command_description("play"))
-@app_commands.describe(query=get_parameter_description("query"))
+@app_commands.describe(query="Link to track/playlist or name to search")
 async def play_music(interaction: discord.Interaction, query: str):
     if not await check_changelog_and_module(interaction, "music"):
         return
@@ -3925,11 +3914,11 @@ class CFView(ui.View):
     async def interaction_check(self, interaction):
         return interaction.user.id == self.target.id
 
-    @ui.button(label=translation_manager.get_text("buttons.accept_bet", None, None), style=ButtonStyle.success, row=0)
+    @ui.button(label="Accept bet", style=ButtonStyle.success, row=0)
     async def accept(self, inter: discord.Interaction, button: ui.Button):
         await self._resolve(inter)
 
-    @ui.button(label=translation_manager.get_text("buttons.decline_bet", None, None), style=ButtonStyle.danger, row=0)
+    @ui.button(label="Decline", style=ButtonStyle.danger, row=0)
     async def decline(self, inter: discord.Interaction, button: ui.Button):
         eco_starter = get_user_eco(self.guild_id, self.starter.id)
         eco_target = get_user_eco(self.guild_id, self.target.id)
@@ -4923,7 +4912,7 @@ async def rrlist(interaction: discord.Interaction):
 # —– RR DELETE —–
 @app_commands.guild_only()
 @bot.tree.command(name="rrdelete", description=get_command_description("rrdelete"))
-@app_commands.describe(message_id=get_parameter_description("message_id"))
+@app_commands.describe(message_id="Message ID (text)")
 async def rrdelete(
     interaction: discord.Interaction,
     message_id: str
