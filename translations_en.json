@@ -1488,22 +1488,12 @@
     "removed": "What was removed (optional)",
     "version_type": "Update type",
     "language": "Language",
-    "scope": "Scope",
+    "scope": "Language scope (Personal/Server)",
     "changelog_channel": "Changelog channel",
-    "ai_channel": "AI channel",
+    "fixed": "What was fixed (optional)",
     "log_channel": "Log channel",
     "welcome_channel": "Welcome channel",
     "counting_channel": "Counting channel",
-    "ping_channel": "Ping channel",
-    "econlogs_channel": "Economy logs channel",
-    "work_channel": "Work channel",
-    "min_amount": "Minimum amount",
-    "max_amount": "Maximum amount",
-    "price": "Price",
-    "income": "Daily income",
-    "short": "Short code of your link",
-    "days": "How many days? (can leave empty)",
-    "never": "Never expires (true/false)",
-    "fixed": "What was fixed (optional)"
+    "ping_channel": "Ping channel"
   }
 }
