@@ -482,7 +482,7 @@ async def restart(interaction: discord.Interaction):
         def __init__(self):
             super().__init__(timeout=60) 
 
-        @button(label=translation_manager.get_text("buttons.yes", None, None), style=ButtonStyle.danger)
+        @button(label=translation_manager.get_text("buttons.yes", interaction.user.id, interaction.guild_id), style=ButtonStyle.danger)
         async def confirm(self, interaction2: Interaction, button: Button):
             if interaction2.user.id != interaction.user.id:
                 cannot_confirm_msg = translation_manager.get_text("bot_management.cannot_confirm", interaction2.user.id, interaction2.guild_id)
@@ -508,7 +508,7 @@ async def restart(interaction: discord.Interaction):
                             print(error_msg)
             await bot.close()
 
-        @button(label=translation_manager.get_text("buttons.no", None, None), style=ButtonStyle.secondary)
+        @button(label=translation_manager.get_text("buttons.no", interaction.user.id, interaction.guild_id), style=ButtonStyle.secondary)
         async def cancel(self, interaction2: Interaction, button: Button):
             if interaction2.user.id != interaction.user.id:
                 cannot_cancel_msg = translation_manager.get_text("bot_management.cannot_cancel", interaction2.user.id, interaction2.guild_id)
@@ -547,7 +547,7 @@ async def faq(interaction: discord.Interaction):
     view = ui.View()
 
     class FAQButtons(ui.View):
-        @ui.button(label=translation_manager.get_text("buttons.yes_send_ai_faq", None, None), style=ButtonStyle.success)
+        @ui.button(label=translation_manager.get_text("buttons.yes_send_ai_faq", interaction.user.id, interaction.guild_id), style=ButtonStyle.success)
         async def yes(self, interaction2: Interaction, _):
             if not interaction.user.guild_permissions.administrator:
                 no_perms = translation_manager.get_text("general.no_permissions_short", interaction2.user.id, interaction2.guild_id)
@@ -609,7 +609,7 @@ async def faq(interaction: discord.Interaction):
             await interaction2.channel.send(embed=full)
             await interaction2.response.defer()
 
-        @ui.button(label=translation_manager.get_text("buttons.no", None, None), style=ButtonStyle.secondary)
+        @ui.button(label=translation_manager.get_text("buttons.no", interaction.user.id, interaction.guild_id), style=ButtonStyle.secondary)
         async def no(self, interaction2: Interaction, _):
             close_msg = translation_manager.get_text("faq.close_faq", interaction2.user.id, interaction2.guild_id)
             await interaction2.response.send_message(close_msg, ephemeral=True)
@@ -1806,13 +1806,13 @@ async def changelog_cmd(interaction: discord.Interaction, version_type: str, add
     )
 
     if added:
-        added_text = translation_manager.get_text("changelog.added_text", None, None)
+        added_text = translation_manager.get_text("changelog.added_text", interaction.user.id, interaction.guild_id)
         embed.add_field(name=added_text, value=added, inline=False)
     if removed:
-        removed_text = translation_manager.get_text("changelog.removed_text", None, None)
+        removed_text = translation_manager.get_text("changelog.removed_text", interaction.user.id, interaction.guild_id)
         embed.add_field(name=removed_text, value=removed, inline=False)
     if fixed:
-        fixed_text = translation_manager.get_text("changelog.fixed_text", None, None)
+        fixed_text = translation_manager.get_text("changelog.fixed_text", interaction.user.id, interaction.guild_id)
         embed.add_field(name=fixed_text, value=fixed, inline=False)
 
     embed.set_footer(text=f"Changelog by {interaction.user.display_name}")
@@ -2601,7 +2601,7 @@ async def help(ctx):
 
 async def create_control_embed(player):
     """Tworzy embed z kontrolkami muzycznymi"""
-    player_title = translation_manager.get_text("music.player_title", None, None)
+    player_title = translation_manager.get_text("music.player_title", None, player.guild_id)
     embed = discord.Embed(title=player_title, color=discord.Color.blue())
     
     if player.current_track:
@@ -2670,7 +2670,7 @@ class MusicControlView(discord.ui.View):
         must_be_in_voice_or_admin_text = translation_manager.get_text("music.must_be_in_voice_or_admin", interaction.user.id, interaction.guild_id)
         return await interaction.response.send_message(must_be_in_voice_or_admin_text, ephemeral=True)
     
-    @discord.ui.button(label=translation_manager.get_text("buttons.skip", None, None), style=discord.ButtonStyle.primary, row=0)
+    @discord.ui.button(label="⏭️", style=discord.ButtonStyle.primary, row=0)
     async def skip_button(self, interaction: discord.Interaction, button: discord.ui.Button):
         if not self.check_permissions(interaction):
             return await self.send_permission_error(interaction)
@@ -2683,7 +2683,7 @@ class MusicControlView(discord.ui.View):
             nothing_playing_text = translation_manager.get_text("music.nothing_playing", interaction.user.id, interaction.guild_id)
             await interaction.response.send_message(nothing_playing_text, ephemeral=True)
     
-    @discord.ui.button(label=translation_manager.get_text("buttons.pause", None, None), style=discord.ButtonStyle.secondary, row=0)
+    @discord.ui.button(label="⏸️", style=discord.ButtonStyle.secondary, row=0)
     async def pause_button(self, interaction: discord.Interaction, button: discord.ui.Button):
         if not self.check_permissions(interaction):
             return await self.send_permission_error(interaction)
@@ -2697,7 +2697,7 @@ class MusicControlView(discord.ui.View):
             nothing_playing_text = translation_manager.get_text("music.nothing_playing", interaction.user.id, interaction.guild_id)
             await interaction.response.send_message(nothing_playing_text, ephemeral=True)
     
-    @discord.ui.button(label=translation_manager.get_text("buttons.resume", None, None), style=discord.ButtonStyle.success, row=0)
+    @discord.ui.button(label="▶️", style=discord.ButtonStyle.success, row=0)
     async def resume_button(self, interaction: discord.Interaction, button: discord.ui.Button):
         if not self.check_permissions(interaction):
             return await self.send_permission_error(interaction)
@@ -2711,7 +2711,7 @@ class MusicControlView(discord.ui.View):
             not_paused_text = translation_manager.get_text("music.playback_not_paused", interaction.user.id, interaction.guild_id)
             await interaction.response.send_message(not_paused_text, ephemeral=True)
     
-    @discord.ui.button(label=translation_manager.get_text("buttons.stop", None, None), style=discord.ButtonStyle.danger, row=0)
+    @discord.ui.button(label="⏹️", style=discord.ButtonStyle.danger, row=0)
     async def stop_button(self, interaction: discord.Interaction, button: discord.ui.Button):
         if not self.check_permissions(interaction):
             return await self.send_permission_error(interaction)
@@ -2720,7 +2720,7 @@ class MusicControlView(discord.ui.View):
         stopped_text = translation_manager.get_text("music.playback_stopped", interaction.user.id, interaction.guild_id)
         await interaction.response.send_message(stopped_text, ephemeral=True)
     
-    @discord.ui.button(label=translation_manager.get_text("buttons.volume_up", None, None), style=discord.ButtonStyle.secondary, row=1)
+    @discord.ui.button(label="🔊", style=discord.ButtonStyle.secondary, row=1)
     async def volume_up_button(self, interaction: discord.Interaction, button: discord.ui.Button):
         if not self.check_permissions(interaction):
             return await self.send_permission_error(interaction)
@@ -2737,7 +2737,7 @@ class MusicControlView(discord.ui.View):
             volume_max_text = translation_manager.get_text("music.volume_max", interaction.user.id, interaction.guild_id)
             await interaction.response.send_message(volume_max_text, ephemeral=True)
     
-    @discord.ui.button(label=translation_manager.get_text("buttons.volume_down", None, None), style=discord.ButtonStyle.secondary, row=1)
+    @discord.ui.button(label="🔉", style=discord.ButtonStyle.secondary, row=1)
     async def volume_down_button(self, interaction: discord.Interaction, button: discord.ui.Button):
         if not self.check_permissions(interaction):
             return await self.send_permission_error(interaction)
@@ -2754,7 +2754,7 @@ class MusicControlView(discord.ui.View):
             volume_min_text = translation_manager.get_text("music.volume_min", interaction.user.id, interaction.guild_id)
             await interaction.response.send_message(volume_min_text, ephemeral=True)
     
-    @discord.ui.button(label=translation_manager.get_text("buttons.shuffle", None, None), style=discord.ButtonStyle.secondary, row=1)
+    @discord.ui.button(label="🔀", style=discord.ButtonStyle.secondary, row=1)
     async def shuffle_button(self, interaction: discord.Interaction, button: discord.ui.Button):
         if not self.check_permissions(interaction):
             return await self.send_permission_error(interaction)
@@ -2768,9 +2768,9 @@ class MusicControlView(discord.ui.View):
             queue_too_short_text = translation_manager.get_text("music.queue_too_short", interaction.user.id, interaction.guild_id)
             await interaction.response.send_message(queue_too_short_text, ephemeral=True)
     
-    @discord.ui.button(label=translation_manager.get_text("buttons.help", None, None), style=discord.ButtonStyle.secondary, row=1)
+    @discord.ui.button(label="❓", style=discord.ButtonStyle.secondary, row=1)
     async def help_button(self, interaction: discord.Interaction, button: discord.ui.Button):
-        help_title = translation_manager.get_text("music.help_title", None, None)
+        help_title = translation_manager.get_text("music.help_title", interaction.user.id, interaction.guild_id)
         embed = discord.Embed(title=help_title, color=discord.Color.blue())
         help_commands_name = translation_manager.get_text("music.help_commands", interaction.user.id, interaction.guild_id)
         help_commands_text = translation_manager.get_text("music.help_commands_text", interaction.user.id, interaction.guild_id)
@@ -3675,19 +3675,19 @@ class RPSView(ui.View):
     async def interaction_check(self, interaction):
         return interaction.user.id in [self.starter.id, self.target.id if self.target else self.starter.id]
 
-    @ui.button(label=translation_manager.get_text("buttons.rock", None, None), style=ButtonStyle.primary, row=0)
+    @ui.button(label="🪨", style=ButtonStyle.primary, row=0)
     async def rock(self, interaction: discord.Interaction, button: ui.Button):
         await self._choose(interaction, "rock")
 
-    @ui.button(label=translation_manager.get_text("buttons.paper", None, None), style=ButtonStyle.primary, row=0)
+    @ui.button(label="📄", style=ButtonStyle.primary, row=0)
     async def paper(self, interaction: discord.Interaction, button: ui.Button):
         await self._choose(interaction, "paper")
 
-    @ui.button(label=translation_manager.get_text("buttons.scissors", None, None), style=ButtonStyle.primary, row=0)
+    @ui.button(label="✂️", style=ButtonStyle.primary, row=0)
     async def scissors(self, interaction: discord.Interaction, button: ui.Button):
         await self._choose(interaction, "scissors")
 
-    @ui.button(label=translation_manager.get_text("buttons.decline_game", None, None), style=ButtonStyle.danger, row=1)
+    @ui.button(label="❌ Decline", style=ButtonStyle.danger, row=1)
     async def decline(self, interaction: discord.Interaction, button: ui.Button):
         if self.stopped: return
         eco_starter = get_user_eco(self.guild_id, self.starter.id)
@@ -3925,11 +3925,11 @@ class CFView(ui.View):
     async def interaction_check(self, interaction):
         return interaction.user.id == self.target.id
 
-    @ui.button(label=translation_manager.get_text("buttons.accept_bet", None, None), style=ButtonStyle.success, row=0)
+    @ui.button(label="✅ Accept", style=ButtonStyle.success, row=0)
     async def accept(self, inter: discord.Interaction, button: ui.Button):
         await self._resolve(inter)
 
-    @ui.button(label=translation_manager.get_text("buttons.decline_bet", None, None), style=ButtonStyle.danger, row=0)
+    @ui.button(label="❌ Decline", style=ButtonStyle.danger, row=0)
     async def decline(self, inter: discord.Interaction, button: ui.Button):
         eco_starter = get_user_eco(self.guild_id, self.starter.id)
         eco_target = get_user_eco(self.guild_id, self.target.id)
@@ -4075,15 +4075,15 @@ class RouletteView(ui.View):
     async def interaction_check(self, interaction):
         return interaction.user.id == self.user.id
 
-    @ui.button(label=translation_manager.get_text("buttons.red", None, None), style=ButtonStyle.danger, row=0)
+    @ui.button(label="🟥 RED", style=ButtonStyle.danger, row=0)
     async def red(self, interaction: discord.Interaction, button: ui.Button):
         await self.spin(interaction, "red")
 
-    @ui.button(label=translation_manager.get_text("buttons.black", None, None), style=ButtonStyle.primary, row=0)
+    @ui.button(label="⬛ BLACK", style=ButtonStyle.primary, row=0)
     async def black(self, interaction: discord.Interaction, button: ui.Button):
         await self.spin(interaction, "black")
 
-    @ui.button(label=translation_manager.get_text("buttons.green", None, None), style=ButtonStyle.success, row=0)
+    @ui.button(label="🟩 GREEN", style=ButtonStyle.success, row=0)
     async def green(self, interaction: discord.Interaction, button: ui.Button):
         await self.spin(interaction, "green")
 
@@ -4193,7 +4193,7 @@ class BlackjackView(ui.View):
             aces -= 1
         return total
 
-    @ui.button(label=translation_manager.get_text("buttons.hit", None, None), style=ButtonStyle.primary, row=0)
+    @ui.button(label="🃏 HIT", style=ButtonStyle.primary, row=0)
     async def hit(self, inter: discord.Interaction, button: ui.Button):
         if self.stopped: return
         self.p_hand.append(self.deck.pop())
@@ -4204,7 +4204,7 @@ class BlackjackView(ui.View):
         else:
             await self.update_msg(inter)
 
-    @ui.button(label=translation_manager.get_text("buttons.stand", None, None), style=ButtonStyle.success, row=0)
+    @ui.button(label="✋ STAND", style=ButtonStyle.success, row=0)
     async def stand(self, inter: discord.Interaction, button: ui.Button):
         if self.stopped: return
         while self.value(self.d_hand) < 17:
@@ -4775,7 +4775,7 @@ class EconResetConfirm(ui.View):
     async def interaction_check(self, interaction: discord.Interaction):
         return interaction.user.id == self.author.id
 
-    @ui.button(label=translation_manager.get_text("buttons.reset_economy", None, None), style=discord.ButtonStyle.danger)
+    @ui.button(label="❗ Reset Economy", style=discord.ButtonStyle.danger)
     async def confirm(self, interaction: discord.Interaction, button: ui.Button):
         reset_econ_data(self.guild_id)
         log_econ(self.guild_id, translation_manager.get_text("logs.economy_reset", self.author.id, self.guild_id, admin=f"{self.author.name} ({self.author.display_name}) [{self.author.id}]"))
@@ -4785,7 +4785,7 @@ class EconResetConfirm(ui.View):
         )
         self.stop()
 
-    @ui.button(label=translation_manager.get_text("buttons.cancel", None, None), style=discord.ButtonStyle.secondary)
+    @ui.button(label="❌ Cancel", style=discord.ButtonStyle.secondary)
     async def cancel(self, interaction: discord.Interaction, button: ui.Button):
         economy_reset_cancelled_text = translation_manager.get_text("economy.economy_reset_cancelled", interaction.user.id, interaction.guild_id)
         await interaction.response.edit_message(
