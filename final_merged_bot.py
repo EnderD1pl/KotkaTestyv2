@@ -639,9 +639,6 @@ async def test_lang(interaction: discord.Interaction):
     embed.add_field(name="faq.title", value=faq_title, inline=False)
     
     await interaction.response.send_message(embed=embed, ephemeral=True)
-
-
-
 @bot.tree.command(name="clear", description=get_command_description("clear"))
 @app_commands.checks.has_permissions(administrator=True)
 async def clear(interaction: discord.Interaction):
@@ -689,8 +686,8 @@ async def refreshusers(interaction: discord.Interaction):
 
 @bot.tree.command(name="language", description=get_command_description("language"))
 @app_commands.describe(
-    language="Choose language (Polish/English)",
-    scope="Language change scope (Personal/Server - admin only)"
+    language=get_parameter_description("language"),
+    scope=get_parameter_description("scope")
 )
 @app_commands.choices(language=[
     app_commands.Choice(name=translation_manager.get_text("language.polish_choice", None, None), value="pl"),
@@ -1288,7 +1285,6 @@ async def on_ready():
                     print(error_msg)
 
     bot.loop.create_task(save_guilds_periodically(bot))
-
 @bot.event
 async def on_guild_join(guild):
     if bot_locked:
@@ -1624,7 +1620,7 @@ async def setaichannel(interaction: discord.Interaction, channel: discord.TextCh
 
 @app_commands.guild_only()
 @bot.tree.command(name="setchangelogchannel", description=get_command_description("setchangelogchannel"))
-@app_commands.describe(channel="Changelog channel")
+@app_commands.describe(channel=get_parameter_description("changelog_channel"))
 async def setchangelogchannel(ctx, channel: discord.TextChannel):
     if not ctx.user.guild_permissions.administrator:
         no_perms_msg = translation_manager.get_text("general.no_permissions_short", ctx.user.id, ctx.guild.id)
@@ -1803,13 +1799,13 @@ async def changelog_cmd(interaction: discord.Interaction, version_type: str, add
     )
 
     if added:
-        added_text = translation_manager.get_text("changelog.added", None, guild.id) if translation_manager.get_text("changelog.added", None, guild.id) != "[Missing: changelog.added]" else "➕ Dodano"
+        added_text = translation_manager.get_text("changelog.added_text", None, None)
         embed.add_field(name=added_text, value=added, inline=False)
     if removed:
-        removed_text = translation_manager.get_text("changelog.removed_text", None, guild.id)
+        removed_text = translation_manager.get_text("changelog.removed_text", None, None)
         embed.add_field(name=removed_text, value=removed, inline=False)
     if fixed:
-        fixed_text = translation_manager.get_text("changelog.fixed", None, guild.id) if translation_manager.get_text("changelog.fixed", None, guild.id) != "[Missing: changelog.fixed]" else "🔧 Naprawiono"
+        fixed_text = translation_manager.get_text("changelog.fixed_text", None, None)
         embed.add_field(name=fixed_text, value=fixed, inline=False)
 
     embed.set_footer(text=f"Changelog by {interaction.user.display_name}")
@@ -1837,7 +1833,7 @@ async def changelog_cmd(interaction: discord.Interaction, version_type: str, add
 
 
 @bot.tree.command(name="announce", description=get_command_description("announce"))
-@app_commands.describe(message="Announcement content")
+@app_commands.describe(message=get_parameter_description("message"))
 async def announce_cmd(interaction: discord.Interaction, message: str):
     if interaction.user.id not in AUTHORIZED_USERS:
         no_perms_text = translation_manager.get_text("general.no_command_permissions", interaction.user.id, interaction.guild_id)
@@ -1879,7 +1875,7 @@ async def announce_cmd(interaction: discord.Interaction, message: str):
 
 @app_commands.guild_only()
 @bot.tree.command(name="setperms", description=get_command_description("setperms"))
-@app_commands.describe(role="Role", permissions="warn,ban,kick,timeout")
+@app_commands.describe(role=get_parameter_description("role"), permissions=get_parameter_description("permissions"))
 async def setperms(ctx, role: discord.Role, permissions: str):
     if not await check_changelog_and_module(ctx, "moderation"):
         return
@@ -1916,10 +1912,9 @@ async def setperms(ctx, role: discord.Role, permissions: str):
     )
     await ctx.followup.send(embed=embed, ephemeral=True)
     await log_action(ctx.guild, "SetPerms", ctx.user, reason=f"{role.name}: {new_perms}", executor=ctx.user)
-
 @app_commands.guild_only()
 @bot.tree.command(name="revokeperms", description=get_command_description("revokeperms"))
-@app_commands.describe(role="Role", permissions="warn,ban,kick,timeout")
+@app_commands.describe(role=get_parameter_description("role"), permissions=get_parameter_description("permissions"))
 async def revokeperms(ctx, role: discord.Role, permissions: str):
     if not await check_changelog_and_module(ctx, "moderation"):
         return
@@ -1996,7 +1991,7 @@ async def permslist(ctx):
 
 @app_commands.guild_only()
 @bot.tree.command(name="warn", description=get_command_description("warn"))
-@app_commands.describe(user="User", reason="Reason")
+@app_commands.describe(user=get_parameter_description("user"), reason=get_parameter_description("reason"))
 async def warn(ctx, user: discord.Member, reason: str):
     if not await check_changelog_and_module(ctx, "moderation"):
         return
@@ -2050,7 +2045,7 @@ async def warn(ctx, user: discord.Member, reason: str):
 
 @app_commands.guild_only()
 @bot.tree.command(name="warns", description=get_command_description("warns"))
-@app_commands.describe(user="User (optional)")
+@app_commands.describe(user=get_parameter_description("user_optional"))
 async def warns(ctx, user: discord.Member = None):
     if not await check_changelog_and_module(ctx, "moderation"):
         return
@@ -2080,7 +2075,7 @@ async def warns(ctx, user: discord.Member = None):
 
 @app_commands.guild_only()
 @bot.tree.command(name="clearwarns", description=get_command_description("clearwarns"))
-@app_commands.describe(user="User")
+@app_commands.describe(user=get_parameter_description("user"))
 async def clearwarns(ctx, user: discord.Member):
     if not await check_changelog_and_module(ctx, "moderation"):
         return
@@ -2101,7 +2096,7 @@ async def clearwarns(ctx, user: discord.Member):
 
 @app_commands.guild_only()
 @bot.tree.command(name="ban", description=get_command_description("ban"))
-@app_commands.describe(user="User", reason="Reason", time="e.g. '1d','2h'")
+@app_commands.describe(user=get_parameter_description("user"), reason=get_parameter_description("reason"), time=get_parameter_description("time"))
 async def ban(ctx, user: discord.Member, reason: str = None, time: str = None):
     if not await check_changelog_and_module(ctx, "moderation"):
         return
@@ -2128,8 +2123,12 @@ async def ban(ctx, user: discord.Member, reason: str = None, time: str = None):
             return await ctx.followup.send(embed=discord.Embed(description=invalid_format_text, color=discord.Color.red()))
     await user.ban(reason=reason or "")
     text = translation_manager.get_text("moderation.user_banned_text", ctx.user.id, ctx.guild.id, user=user.mention)
-    if reason: text+=f" za: {reason}"
-    if temp: text+=f"\nCzas: {time}"
+    if reason: 
+        reason_text = translation_manager.get_text("general.reason", ctx.user.id, ctx.guild.id)
+        text += f" {reason_text}: {reason}"
+    if temp: 
+        time_text = translation_manager.get_text("general.duration", ctx.user.id, ctx.guild.id)
+        text += f"\n{time_text}: {time}"
     embed=discord.Embed(description=text,color=discord.Color.orange())
     await ctx.followup.send(embed=embed)
     await log_action(ctx.guild,"Ban",user,reason, time if temp else None, executor=ctx.user)
@@ -2141,7 +2140,7 @@ async def ban(ctx, user: discord.Member, reason: str = None, time: str = None):
 
 @app_commands.guild_only()
 @bot.tree.command(name="kick", description=get_command_description("kick"))
-@app_commands.describe(user="User", reason="Reason")
+@app_commands.describe(user=get_parameter_description("user"), reason=get_parameter_description("reason"))
 async def kick(ctx, user: discord.Member, reason: str = None):
     if not await check_changelog_and_module(ctx, "moderation"):
         return
@@ -2151,14 +2150,16 @@ async def kick(ctx, user: discord.Member, reason: str = None):
     await ctx.response.defer()
     await user.kick(reason=reason or "")
     text = translation_manager.get_text("moderation.user_kicked_text", ctx.user.id, ctx.guild.id, user=user.mention)
-    if reason: text+=f" za: {reason}"
+    if reason: 
+        reason_text = translation_manager.get_text("general.reason", ctx.user.id, ctx.guild.id)
+        text += f" {reason_text}: {reason}"
     embed=discord.Embed(description=text,color=discord.Color.orange())
     await ctx.followup.send(embed=embed)
     await log_action(ctx.guild,"Kick",user,reason, executor=ctx.user)
 
 @app_commands.guild_only()
 @bot.tree.command(name="timeout", description=get_command_description("timeout"))
-@app_commands.describe(user="User", time="e.g. '1d','2h','10m'", reason="Reason")
+@app_commands.describe(user=get_parameter_description("user"), time=get_parameter_description("time_long"), reason=get_parameter_description("reason"))
 async def timeout(ctx, user: discord.Member, time: str, reason: str = None):
     if not await check_changelog_and_module(ctx, "moderation"):
         return
@@ -2187,14 +2188,16 @@ async def timeout(ctx, user: discord.Member, time: str, reason: str = None):
         return await ctx.followup.send(embed=discord.Embed(description=invalid_format_text, color=discord.Color.red()))
     await user.timeout(dur,reason=reason or "")
     text = translation_manager.get_text("moderation.user_muted_text", ctx.user.id, ctx.guild.id, user=user.mention, time=time)
-    if reason: text+=f" za: {reason}"
+    if reason: 
+        reason_text = translation_manager.get_text("general.reason", ctx.user.id, ctx.guild.id)
+        text += f" {reason_text}: {reason}"
     embed=discord.Embed(description=text,color=discord.Color.orange())
     await ctx.followup.send(embed=embed)
     await log_action(ctx.guild,"Timeout",user,reason,time, executor=ctx.user)
 
 @app_commands.guild_only()
 @bot.tree.command(name="unban", description=get_command_description("unban"))
-@app_commands.describe(user_id="User ID")
+@app_commands.describe(user_id=get_parameter_description("user_id"))
 async def unban(ctx, user_id: str):
     if not await check_changelog_and_module(ctx, "moderation"):
         return
@@ -2216,7 +2219,7 @@ async def unban(ctx, user_id: str):
 
 @app_commands.guild_only()
 @bot.tree.command(name="setlogchannel", description=get_command_description("setlogchannel"))
-@app_commands.describe(channel="Log channel")
+@app_commands.describe(channel=get_parameter_description("log_channel"))
 async def setlogchannel(ctx, channel: discord.TextChannel):
     if not await check_changelog_and_module(ctx, "moderation"):
         return
@@ -2234,7 +2237,7 @@ async def setlogchannel(ctx, channel: discord.TextChannel):
 
 @app_commands.guild_only()
 @bot.tree.command(name="setwelcomechannel", description=get_command_description("setwelcomechannel"))
-@app_commands.describe(channel="Welcome channel")
+@app_commands.describe(channel=get_parameter_description("welcome_channel"))
 async def setwelcomechannel(ctx, channel: discord.TextChannel):
     if not await check_changelog_and_module(ctx, "moderation"):
         return
@@ -2252,7 +2255,7 @@ async def setwelcomechannel(ctx, channel: discord.TextChannel):
 
 @app_commands.guild_only()
 @bot.tree.command(name="setcounterchannel", description=get_command_description("setcounterchannel"))
-@app_commands.describe(channel="Counting channel")
+@app_commands.describe(channel=get_parameter_description("counting_channel"))
 async def setcounterchannel(ctx, channel: discord.TextChannel):
     if not await check_changelog_and_module(ctx, "moderation"):
         return
@@ -2265,7 +2268,7 @@ async def setcounterchannel(ctx, channel: discord.TextChannel):
     cd[gid] = channel.id
     save_channel_data("counters",cd)
     save_counter_data(gid,{"last_number":1,"last_user":None})
-    await channel.send(translation_manager.get_text("counter.first_number", interaction.user.id, interaction.guild_id))
+    await channel.send(translation_manager.get_text("counter.first_number", ctx.user.id, ctx.guild.id))
     counter_channel_text = translation_manager.get_text("moderation.counter_channel_set", ctx.user.id, ctx.guild.id, channel=channel.mention)
     embed = discord.Embed(description=counter_channel_text, color=discord.Color.green())
     await ctx.followup.send(embed=embed,ephemeral=True)
@@ -2273,7 +2276,7 @@ async def setcounterchannel(ctx, channel: discord.TextChannel):
 
 @app_commands.guild_only()
 @bot.tree.command(name="setpingchannel", description=get_command_description("setpingchannel"))
-@app_commands.describe(channel="Ping channel")
+@app_commands.describe(channel=get_parameter_description("ping_channel"))
 async def setpingchannel(ctx, channel: discord.TextChannel):
     if not await check_changelog_and_module(ctx, "moderation"):
         return
@@ -2321,7 +2324,7 @@ async def unlock(ctx):
 
 @app_commands.guild_only()
 @bot.tree.command(name="purge", description=get_command_description("purge"))
-@app_commands.describe(amount="Amount (1-100)")
+@app_commands.describe(amount=get_parameter_description("amount_1_100"))
 async def purge(ctx, amount: int):
     if not await check_changelog_and_module(ctx, "moderation"):
         return
@@ -2412,7 +2415,6 @@ async def showchannels(ctx):
         embed.add_field(name=label, value=mention, inline=False)
 
     await ctx.followup.send(embed=embed, ephemeral=True)
-
 @app_commands.guild_only()
 @bot.tree.command(name="help", description=get_command_description("help"))
 async def help(ctx):
@@ -2659,7 +2661,7 @@ class MusicControlView(discord.ui.View):
         must_be_in_voice_or_admin_text = translation_manager.get_text("music.must_be_in_voice_or_admin", interaction.user.id, interaction.guild_id)
         return await interaction.response.send_message(must_be_in_voice_or_admin_text, ephemeral=True)
     
-    @discord.ui.button(label="⏭️", style=discord.ButtonStyle.primary, row=0)
+    @discord.ui.button(label=translation_manager.get_text("buttons.skip", None, None), style=discord.ButtonStyle.primary, row=0)
     async def skip_button(self, interaction: discord.Interaction, button: discord.ui.Button):
         if not self.check_permissions(interaction):
             return await self.send_permission_error(interaction)
@@ -2672,7 +2674,7 @@ class MusicControlView(discord.ui.View):
             nothing_playing_text = translation_manager.get_text("music.nothing_playing", interaction.user.id, interaction.guild_id)
             await interaction.response.send_message(nothing_playing_text, ephemeral=True)
     
-    @discord.ui.button(label="⏸️", style=discord.ButtonStyle.secondary, row=0)
+    @discord.ui.button(label=translation_manager.get_text("buttons.pause", None, None), style=discord.ButtonStyle.secondary, row=0)
     async def pause_button(self, interaction: discord.Interaction, button: discord.ui.Button):
         if not self.check_permissions(interaction):
             return await self.send_permission_error(interaction)
@@ -2686,7 +2688,7 @@ class MusicControlView(discord.ui.View):
             nothing_playing_text = translation_manager.get_text("music.nothing_playing", interaction.user.id, interaction.guild_id)
             await interaction.response.send_message(nothing_playing_text, ephemeral=True)
     
-    @discord.ui.button(label="▶️", style=discord.ButtonStyle.success, row=0)
+    @discord.ui.button(label=translation_manager.get_text("buttons.resume", None, None), style=discord.ButtonStyle.success, row=0)
     async def resume_button(self, interaction: discord.Interaction, button: discord.ui.Button):
         if not self.check_permissions(interaction):
             return await self.send_permission_error(interaction)
@@ -2700,7 +2702,7 @@ class MusicControlView(discord.ui.View):
             not_paused_text = translation_manager.get_text("music.playback_not_paused", interaction.user.id, interaction.guild_id)
             await interaction.response.send_message(not_paused_text, ephemeral=True)
     
-    @discord.ui.button(label="⏹️", style=discord.ButtonStyle.danger, row=0)
+    @discord.ui.button(label=translation_manager.get_text("buttons.stop", None, None), style=discord.ButtonStyle.danger, row=0)
     async def stop_button(self, interaction: discord.Interaction, button: discord.ui.Button):
         if not self.check_permissions(interaction):
             return await self.send_permission_error(interaction)
@@ -2709,7 +2711,7 @@ class MusicControlView(discord.ui.View):
         stopped_text = translation_manager.get_text("music.playback_stopped", interaction.user.id, interaction.guild_id)
         await interaction.response.send_message(stopped_text, ephemeral=True)
     
-    @discord.ui.button(label="🔊", style=discord.ButtonStyle.secondary, row=1)
+    @discord.ui.button(label=translation_manager.get_text("buttons.volume_up", None, None), style=discord.ButtonStyle.secondary, row=1)
     async def volume_up_button(self, interaction: discord.Interaction, button: discord.ui.Button):
         if not self.check_permissions(interaction):
             return await self.send_permission_error(interaction)
@@ -2726,7 +2728,7 @@ class MusicControlView(discord.ui.View):
             volume_max_text = translation_manager.get_text("music.volume_max", interaction.user.id, interaction.guild_id)
             await interaction.response.send_message(volume_max_text, ephemeral=True)
     
-    @discord.ui.button(label="🔉", style=discord.ButtonStyle.secondary, row=1)
+    @discord.ui.button(label=translation_manager.get_text("buttons.volume_down", None, None), style=discord.ButtonStyle.secondary, row=1)
     async def volume_down_button(self, interaction: discord.Interaction, button: discord.ui.Button):
         if not self.check_permissions(interaction):
             return await self.send_permission_error(interaction)
@@ -2743,7 +2745,7 @@ class MusicControlView(discord.ui.View):
             volume_min_text = translation_manager.get_text("music.volume_min", interaction.user.id, interaction.guild_id)
             await interaction.response.send_message(volume_min_text, ephemeral=True)
     
-    @discord.ui.button(label="🔀", style=discord.ButtonStyle.secondary, row=1)
+    @discord.ui.button(label=translation_manager.get_text("buttons.shuffle", None, None), style=discord.ButtonStyle.secondary, row=1)
     async def shuffle_button(self, interaction: discord.Interaction, button: discord.ui.Button):
         if not self.check_permissions(interaction):
             return await self.send_permission_error(interaction)
@@ -2757,7 +2759,7 @@ class MusicControlView(discord.ui.View):
             queue_too_short_text = translation_manager.get_text("music.queue_too_short", interaction.user.id, interaction.guild_id)
             await interaction.response.send_message(queue_too_short_text, ephemeral=True)
     
-    @discord.ui.button(label="❓", style=discord.ButtonStyle.secondary, row=1)
+    @discord.ui.button(label=translation_manager.get_text("buttons.help", None, None), style=discord.ButtonStyle.secondary, row=1)
     async def help_button(self, interaction: discord.Interaction, button: discord.ui.Button):
         help_title = translation_manager.get_text("music.help_title", None, None)
         embed = discord.Embed(title=help_title, color=discord.Color.blue())
@@ -3047,10 +3049,9 @@ def is_spotify_url(url):
 def is_youtube_url(url):
     """Sprawdza czy URL to YouTube"""
     return any(domain in url for domain in ['youtube.com', 'youtu.be', 'music.youtube.com'])
-
 @app_commands.guild_only()
 @bot.tree.command(name="play", description=get_command_description("play"))
-@app_commands.describe(query="Link to track/playlist or name to search")
+@app_commands.describe(query=get_parameter_description("query"))
 async def play_music(interaction: discord.Interaction, query: str):
     if not await check_changelog_and_module(interaction, "music"):
         return
@@ -3385,7 +3386,7 @@ async def admin_remove(inter: discord.Interaction, user: discord.Member, amount:
         return await inter.response.send_message(embed=eco_error(translation_manager.get_text("economy.invalid_parameters", inter.user.id, inter.guild_id)), ephemeral=True)
     data = get_user_eco(inter.guild.id, user.id)
     if data[konto] < amount:
-        insufficient_funds_text = translation_manager.get_text("general.user_insufficient_funds", inter.user.id, inter.guild_id)
+        insufficient_funds_text = translation_manager.get_text("general.user_insufficient_funds", inter.user.id, inter.guild.id)
         return await inter.response.send_message(embed=eco_error(insufficient_funds_text), ephemeral=True)
     data[konto] -= amount
     update_user_eco(inter.guild.id, user.id, data)
@@ -3408,7 +3409,7 @@ async def admin_setincome(inter: discord.Interaction, role: discord.Role, amount
     save_economy(inter.guild.id, eco)
     log_msg = translation_manager.get_text("logging.economy_income_set", None, None, admin=f"{inter.user.name} ({inter.user.display_name}) [{inter.user.id}]", amount=amount, role=role.name)
     log_econ(inter.guild.id, log_msg)
-    income_set_text = translation_manager.get_text("economy.income_set", inter.user.id, inter.guild_id, amount=amount, role=role.mention)
+    income_set_text = translation_manager.get_text("economy.income_set", inter.user.id, inter.guild.id, amount=amount, role=role.mention)
     return await inter.response.send_message(embed=eco_success(income_set_text), ephemeral=True)
 
 @app_commands.guild_only()
@@ -3421,10 +3422,10 @@ async def admin_listincome(inter: discord.Interaction):
         return await inter.response.send_message(embed=eco_error(no_perms), ephemeral=True)
     eco = load_economy(inter.guild.id)
     incomes = eco.get('incomes', {})
-    income_roles_title = translation_manager.get_text("economy.income_roles_title", inter.user.id, inter.guild_id)
+    income_roles_title = translation_manager.get_text("economy.income_roles_title", inter.user.id, inter.guild.id)
     embed = discord.Embed(title=income_roles_title, color=discord.Color.blue())
     if not incomes:
-        no_income_roles_text = translation_manager.get_text("economy.no_income_roles", inter.user.id, inter.guild_id)
+        no_income_roles_text = translation_manager.get_text("economy.no_income_roles", inter.user.id, inter.guild.id)
         embed.description = no_income_roles_text
     else:
         for rid, val in incomes.items():
@@ -3447,9 +3448,9 @@ async def admin_removeincome(inter: discord.Interaction, role: discord.Role):
         save_economy(inter.guild.id, eco)
         log_msg = translation_manager.get_text("logging.economy_income_removed", None, None, admin=f"{inter.user.name} ({inter.user.display_name}) [{inter.user.id}]", role=role.name)
         log_econ(inter.guild.id, log_msg)
-        income_removed_text = translation_manager.get_text("economy.income_removed", inter.user.id, inter.guild_id, role=role.mention)
+        income_removed_text = translation_manager.get_text("economy.income_removed", inter.user.id, inter.guild.id, role=role.mention)
         return await inter.response.send_message(embed=eco_success(income_removed_text), ephemeral=True)
-    no_income_role_text = translation_manager.get_text("economy.role_no_income", inter.user.id, inter.guild_id)
+    no_income_role_text = translation_manager.get_text("economy.role_no_income", inter.user.id, inter.guild.id)
     return await inter.response.send_message(embed=eco_error(no_income_role_text), ephemeral=True)
 
 @app_commands.guild_only()
@@ -3647,7 +3648,6 @@ def ensure_bet(user, bet):
         insufficient_text = translation_manager.get_text("economy.insufficient_wallet", None, None)
         return False, insufficient_text
     return True, None
-
 # RPS (Rock Paper Scissors)
 class RPSView(ui.View):
     def __init__(self, starter, target, bet, guild_id):
@@ -3914,11 +3914,11 @@ class CFView(ui.View):
     async def interaction_check(self, interaction):
         return interaction.user.id == self.target.id
 
-    @ui.button(label="Accept bet", style=ButtonStyle.success, row=0)
+    @ui.button(label=translation_manager.get_text("buttons.accept_bet", None, None), style=ButtonStyle.success, row=0)
     async def accept(self, inter: discord.Interaction, button: ui.Button):
         await self._resolve(inter)
 
-    @ui.button(label="Decline", style=ButtonStyle.danger, row=0)
+    @ui.button(label=translation_manager.get_text("buttons.decline_bet", None, None), style=ButtonStyle.danger, row=0)
     async def decline(self, inter: discord.Interaction, button: ui.Button):
         eco_starter = get_user_eco(self.guild_id, self.starter.id)
         eco_target = get_user_eco(self.guild_id, self.target.id)
@@ -4160,7 +4160,6 @@ async def roulette_cmd(inter: discord.Interaction, amount: int):
         roulette_choose_color_text, view=view, ephemeral=True
     )
     view.msg = await inter.original_response()
-
 class BlackjackView(ui.View):
     def __init__(self, player, bet, guild_id):
         super().__init__(timeout=60)
@@ -4647,7 +4646,7 @@ async def shoplist_cmd(inter: discord.Interaction):
     if not shop:
         shop_empty_text = translation_manager.get_text("economy.shop_empty_description", inter.user.id, inter.guild_id)
         return await inter.response.send_message(embed=eco_error(shop_empty_text), ephemeral=True)
-    shop_title = translation_manager.get_text("economy.shop_title", inter.user.id, inter.guild.id)
+    shop_title = translation_manager.get_text("economy.shop_title", inter.user.id, inter.guild_id)
     embed = Embed(title=shop_title, color=0x22dd66)
     for alias, item in shop.items():
         role = inter.guild.get_role(item['role_id'])
@@ -4712,8 +4711,8 @@ async def shop_cmd(inter: discord.Interaction):
         return
     shop = load_shop(inter.guild.id)
     if not shop:
-        shop_empty_title = translation_manager.get_text("economy.shop_empty_title", inter.user.id, inter.guild.id)
-        shop_empty_description = translation_manager.get_text("economy.shop_empty_description", inter.user.id, inter.guild.id)
+        shop_empty_title = translation_manager.get_text("economy.shop_empty_title", inter.user.id, inter.guild_id)
+        shop_empty_description = translation_manager.get_text("economy.shop_empty_description", inter.user.id, inter.guild_id)
         return await inter.response.send_message(
             embed=Embed(title=shop_empty_title, description=shop_empty_description, color=0xff2222),
             ephemeral=True
@@ -4726,9 +4725,9 @@ async def shop_cmd(inter: discord.Interaction):
             desc += f"**{role.mention}**\nCena: `{item['price']}$` • Alias: `{alias}`\n\n"
         else:
             desc += translation_manager.get_text("messages.role_deleted_shop", inter.user.id, inter.guild_id, name=item['name'], price=item['price'], alias=alias)
-    role_descriptions_text = translation_manager.get_text("economy.role_descriptions", inter.user.id, inter.guild.id)
+    role_descriptions_text = translation_manager.get_text("economy.role_descriptions", inter.user.id, inter.guild_id)
     desc += f"\n {role_descriptions_text}"
-    shop_title = translation_manager.get_text("economy.shop_title", inter.user.id, inter.guild.id)
+    shop_title = translation_manager.get_text("economy.shop_title", inter.user.id, inter.guild_id)
     await inter.response.send_message(
         embed=Embed(
             title=shop_title,
@@ -4793,7 +4792,6 @@ async def resetecon_cmd(inter: discord.Interaction):
         translation_manager.get_text("messages.economy_reset_warning", inter.user.id, inter.guild_id),
         view=view, ephemeral=True
     )
-
 @app_commands.guild_only()
 @bot.tree.command(name="resetgamestates", description=get_command_description("resetgamestates"))
 async def resetgamestates(inter: discord.Interaction):
@@ -4825,624 +4823,6 @@ async def resetgamestates(inter: discord.Interaction):
         translation_manager.get_text("messages.gamestates_reset_success", inter.user.id, inter.guild_id, count=reset_count),
         ephemeral=True
     )
-    
-
-    # —– RR CREATE —–
-@app_commands.guild_only()
-@bot.tree.command(name="rrcreate", description=get_command_description("rrcreate"))
-@app_commands.describe(
-    message_id="Message ID (text)",
-    emoji="Emoji (e.g. 🔥 or <:custom:123…>)",
-    role="Role to assign",
-    removable="Whether removable (true/false)?"
-)
-async def rrcreate(
-    interaction: discord.Interaction,
-    message_id: str,
-    emoji: str,
-    role: discord.Role,
-    removable: bool = True
-):
-    if not await check_changelog_and_module(interaction, "moderation"):
-        return
-    if not interaction.user.guild_permissions.administrator:
-        no_perms = translation_manager.get_text("general.no_permissions", interaction.user.id, interaction.guild_id)
-        return await interaction.response.send_message(f"🚫 {no_perms}", ephemeral=True)
-
-    try:
-        msg_id = int(message_id)
-    except ValueError:
-        invalid_msg_id = translation_manager.get_text("general.invalid_message_id", interaction.user.id, interaction.guild_id)
-        return await interaction.response.send_message(f"❌ {invalid_msg_id}", ephemeral=True)
-    channel_id = interaction.channel.id
-
-    data = load_reaction_roles(interaction.guild.id)
-    entry = {"emoji": emoji, "role_id": role.id, "removable": removable}
-    key = str(msg_id)
-    if key not in data:
-        data[key] = {"channel_id": channel_id, "reactions": [entry]}
-    else:
-        data[key]["reactions"].append(entry)
-    save_reaction_roles(interaction.guild.id, data)
-
-    try:
-        channel = interaction.guild.get_channel(channel_id)
-        msg = await channel.fetch_message(msg_id)
-        await msg.add_reaction(emoji)
-    except:
-        pass
-
-    rr_created = translation_manager.get_text("reaction_roles.created", interaction.user.id, interaction.guild_id, emoji=emoji, role_id=role.id, removable=removable)
-    await interaction.response.send_message(f"✅ {rr_created}", ephemeral=True)
-
-
-# —– RR LIST —–
-@app_commands.guild_only()
-@bot.tree.command(name="rrlist", description=get_command_description("rrlist"))
-async def rrlist(interaction: discord.Interaction):
-    if not await check_changelog_and_module(interaction, "moderation"):
-        return
-    if not interaction.user.guild_permissions.administrator:
-        no_perms = translation_manager.get_text("general.no_permissions", interaction.user.id, interaction.guild_id)
-        return await interaction.response.send_message(f"🚫 {no_perms}", ephemeral=True)
-
-    data = load_reaction_roles(interaction.guild.id)
-    if not data:
-        no_rr = translation_manager.get_text("reaction_roles.none", interaction.user.id, interaction.guild_id)
-        return await interaction.response.send_message(no_rr, ephemeral=True)
-
-    title_text = translation_manager.get_text("reaction_roles.title", interaction.user.id, interaction.guild_id)
-    embed = discord.Embed(title=title_text, color=discord.Color.blue())
-    for msg_id, info in data.items():
-        chan_id = info["channel_id"]
-        lines = []
-        for r in info["reactions"]:
-            role = interaction.guild.get_role(r["role_id"])
-            lines.append(f"{r['emoji']} → {role.mention if role else '??'} (removable={r['removable']})")
-        field_name = translation_manager.get_text("reaction_roles.message_field", interaction.user.id, interaction.guild_id, msg_id=msg_id, chan_id=chan_id)
-        embed.add_field(
-            name=field_name,
-            value="\n".join(lines),
-            inline=False
-        )
-
-    await interaction.response.send_message(embed=embed, ephemeral=True)
-
-
-# —– RR DELETE —–
-@app_commands.guild_only()
-@bot.tree.command(name="rrdelete", description=get_command_description("rrdelete"))
-@app_commands.describe(message_id="Message ID (text)")
-async def rrdelete(
-    interaction: discord.Interaction,
-    message_id: str
-):
-    if not await check_changelog_and_module(interaction, "moderation"):
-        return
-    if not interaction.user.guild_permissions.administrator:
-        no_perms = translation_manager.get_text("general.no_permissions", interaction.user.id, interaction.guild_id)
-        return await interaction.response.send_message(f"🚫 {no_perms}", ephemeral=True)
-
-    try:
-        msg_id = int(message_id)
-    except ValueError:
-        invalid_msg_id = translation_manager.get_text("general.invalid_message_id", interaction.user.id, interaction.guild_id)
-        return await interaction.response.send_message(f"❌ {invalid_msg_id}", ephemeral=True)
-
-    data = load_reaction_roles(interaction.guild.id)
-    key = str(msg_id)
-    if key in data:
-        info = data.pop(key)
-        save_reaction_roles(interaction.guild.id, data)
-        try:
-            channel = interaction.guild.get_channel(info["channel_id"])
-            msg = await channel.fetch_message(msg_id)
-            await msg.clear_reactions()
-        except:
-            pass
-        rr_deleted = translation_manager.get_text("reaction_roles.deleted", interaction.user.id, interaction.guild_id, msg_id=msg_id)
-        await interaction.response.send_message(f"🗑️ {rr_deleted}", ephemeral=True)
-    else:
-        no_rr_attached = translation_manager.get_text("reaction_roles.not_attached", interaction.user.id, interaction.guild_id)
-        await interaction.response.send_message(f"❌ {no_rr_attached}", ephemeral=True)
-
-@bot.event
-async def on_raw_reaction_add(payload: discord.RawReactionActionEvent):
-    if bot_locked:
-        return
-    if payload.user_id == bot.user.id or payload.guild_id is None:
-        return
-    data = load_reaction_roles(payload.guild_id)
-    info = data.get(str(payload.message_id))
-    if not info:
-        return
-    for r in info["reactions"]:
-        if str(payload.emoji) == r["emoji"] or getattr(payload.emoji, "name", None) == r["emoji"]:
-            guild  = bot.get_guild(payload.guild_id)
-            member = guild.get_member(payload.user_id)
-            role   = guild.get_role(r["role_id"])
-            if member and role:
-                await member.add_roles(role)
-                if not r["removable"]:
-                    channel = guild.get_channel(info["channel_id"])
-                    msg     = await channel.fetch_message(payload.message_id)
-                    await msg.remove_reaction(payload.emoji, member)
-            break
-
-
-@bot.event
-async def on_raw_reaction_remove(payload: discord.RawReactionActionEvent):
-    if bot_locked:
-        return
-    if payload.user_id == bot.user.id or payload.guild_id is None:
-        return
-    data = load_reaction_roles(payload.guild_id)
-    info = data.get(str(payload.message_id))
-    if not info:
-        return
-    for r in info["reactions"]:
-        if str(payload.emoji) == r["emoji"] or getattr(payload.emoji, "name", None) == r["emoji"]:
-            if r["removable"]:
-                guild  = bot.get_guild(payload.guild_id)
-                member = guild.get_member(payload.user_id)
-                role   = guild.get_role(r["role_id"])
-                if member and role:
-                    await member.remove_roles(role)
-            break
-
-
-# LINK SHORTENER
-
-def format_time(dt_str):
-    if not dt_str:
-        return translation_manager.get_text("general.never", None, None)
-    dt = datetime.fromisoformat(dt_str.replace("Z", "+00:00"))
-    return dt.strftime("%Y-%m-%d %H:%M")
-
-@bot.tree.command(name="shortenlink", description=get_command_description("shortenlink"))
-@app_commands.describe(url="Link to shorten", custom="Custom ending (optional, e.g. 'my link')")
-async def shorten(interaction: discord.Interaction, url: str, custom: str = None):
-    user_id = str(interaction.user.id)
-    username = str(interaction.user.name)
-    now = datetime.now(timezone.utc).timestamp()
-    cooldown = user_cooldowns.get(user_id, 0)
-    if now < cooldown:
-        remaining = int(cooldown - now)
-        cooldown_text = translation_manager.get_text("url_shortener.cooldown_message", interaction.user.id, interaction.guild_id, minutes=remaining//60, seconds=remaining%60)
-        await interaction.response.send_message(cooldown_text, ephemeral=True)
-        return
-    data = {
-        "destination_url": url,
-        "discord_id": user_id,
-        "discord_username": username
-    }
-    if custom:
-        data["custom"] = custom
-    try:
-        resp = requests.post(f"{BACKEND_API}/api/shorten", data=data)
-        if resp.status_code == 429:
-            wait_text = translation_manager.get_text("url_shortener.wait_10min", interaction.user.id, interaction.guild_id)
-            await interaction.response.send_message(wait_text, ephemeral=True)
-            return
-        elif resp.status_code == 409:
-            exists_text = translation_manager.get_text("url_shortener.link_exists", interaction.user.id, interaction.guild_id)
-            await interaction.response.send_message(exists_text, ephemeral=True)
-            return
-        elif not resp.ok:
-            error_text = translation_manager.get_text("url_shortener.error_message", interaction.user.id, interaction.guild_id, error=resp.text)
-            await interaction.response.send_message(error_text, ephemeral=True)
-            return
-        user_cooldowns[user_id] = now + COOLDOWN_SECONDS
-        result = resp.json()
-        link = result["url"]
-        expires = result.get("expires_at")
-        link_created_text = translation_manager.get_text("url_shortener.link_created", interaction.user.id, interaction.guild_id, link=link, expires=format_time(expires))
-        await interaction.response.send_message(link_created_text, ephemeral=True)
-    except Exception as e:
-        error_text = translation_manager.get_text("url_shortener.error_message", interaction.user.id, interaction.guild_id, error=str(e))
-        await interaction.response.send_message(error_text, ephemeral=True)
-
-@bot.tree.command(name="mylinks", description=get_command_description("mylinks"))
-async def mylinks(interaction: discord.Interaction):
-    user_id = str(interaction.user.id)
-    data = {
-        "discord_id": user_id
-    }
-    try:
-        resp = requests.post(f"{BACKEND_API}/api/mylinks", data=data)
-        if not resp.ok:
-            await interaction.response.send_message(translation_manager.get_text("messages.no_links_error", interaction.user.id, interaction.guild_id), ephemeral=True)
-            return
-        links = resp.json()
-        if not links:
-            await interaction.response.send_message(translation_manager.get_text("messages.no_own_links", interaction.user.id, interaction.guild_id), ephemeral=True)
-            return
-        links_header = translation_manager.get_text("url_shortener.your_links", interaction.user.id, interaction.guild_id)
-        msg = f"**{links_header}**\n"
-        for l in links:
-            expires = format_time(l.get("expires_at"))
-            expires_text = translation_manager.get_text("url_shortener.expires", interaction.user.id, interaction.guild_id, expires=expires)
-            msg += f"`/{l['short']}` → <{l['destination_url']}>\n{expires_text}\n"
-        await interaction.response.send_message(msg, ephemeral=True)
-    except Exception as e:
-        error_text = translation_manager.get_text("general.error", interaction.user.id, interaction.guild_id, error=str(e))
-        await interaction.response.send_message(error_text, ephemeral=True)
-
-@bot.tree.command(name="extendlink", description=get_command_description("extendlink"))
-@app_commands.describe(
-    short=get_parameter_description("short"),
-    days=get_parameter_description("days"),
-    never=get_parameter_description("never")
-)
-async def extend(interaction: discord.Interaction, short: str, days: int = None, never: bool = False):
-    user_id = str(interaction.user.id)
-    data = {
-        "discord_id": user_id,
-        "short": short
-    }
-    if never:
-        data["never"] = "on"
-    elif days:
-        data["days"] = days
-    try:
-        resp = requests.post(f"{BACKEND_API}/api/extend", data=data)
-        if not resp.ok:
-            await interaction.response.send_message(translation_manager.get_text("messages.extend_failed", interaction.user.id, interaction.guild_id), ephemeral=True)
-            return
-        expires = resp.json().get("expires_at")
-        await interaction.response.send_message(translation_manager.get_text("messages.new_expiry_date", interaction.user.id, interaction.guild_id, expires=format_time(expires)), ephemeral=True)
-    except Exception as e:
-        error_text = translation_manager.get_text("general.error", interaction.user.id, interaction.guild_id, error=str(e))
-        await interaction.response.send_message(error_text, ephemeral=True)
-
-@bot.tree.command(name="deletelink", description=get_command_description("deletelink"))
-@app_commands.describe(short="Short code of your link")
-async def delete(interaction: discord.Interaction, short: str):
-    user_id = str(interaction.user.id)
-    data = {
-        "discord_id": user_id,
-        "short": short
-    }
-    try:
-        resp = requests.post(f"{BACKEND_API}/api/delete", data=data)
-        if not resp.ok:
-            await interaction.response.send_message(translation_manager.get_text("messages.delete_failed", interaction.user.id, interaction.guild_id), ephemeral=True)
-            return
-        await interaction.response.send_message(translation_manager.get_text("messages.link_deleted", interaction.user.id, interaction.guild_id), ephemeral=True)
-    except Exception as e:
-        error_text = translation_manager.get_text("general.error", interaction.user.id, interaction.guild_id, error=str(e))
-        await interaction.response.send_message(error_text, ephemeral=True)
-
-
-#TEMPMAIL
-
-def generate_mailbox_payload(user_id, expires_in_hours=1, domain="wh0ask3d.email", never_expires=False):
-    random_part = ''.join(random.choices(string.ascii_lowercase + string.digits, k=8))
-    user_part = str(user_id)[-4:]
-    address = f"discord{random_part}{user_part}@{domain}"
-
-    # Expiration logic
-    now = datetime.now(timezone.utc)
-    if never_expires:
-        expires_at = "2099-12-31T23:59:59"
-        cooldown_until = None
-    else:
-        expires = now + timedelta(hours=expires_in_hours)
-        expires_at = expires.isoformat()
-        cooldown = now + timedelta(hours=expires_in_hours)
-        cooldown_until = cooldown.isoformat()
-
-    payload = {
-        "address": address,
-        "created_by": str(user_id),
-        "expires_at": expires_at,
-        "cooldown_until": cooldown_until if not never_expires else None
-    }
-    return payload
-
-# --- /tempmail command ---
-@bot.tree.command(name="tempmail", description=get_command_description("tempmail"))
-async def tempmail(interaction: discord.Interaction):
-    user_id = str(interaction.user.id)
-    logging.info(translation_manager.get_text("logging.user_used_tempmail", user_id, None, user=user_id))
-
-    # Get cooldown
-    try:
-        resp = requests.get(f"{TEMPMAIL_API}/get_cooldown", params={"created_by": user_id}, timeout=5)
-        resp.raise_for_status()
-        data = resp.json()
-    except Exception as e:
-        logging.error(translation_manager.get_text("logging.cooldown_error", user_id, None, error=str(e)))
-        backend_error_text = translation_manager.get_text("tempmail.backend_error", user_id, interaction.guild_id)
-        await interaction.response.send_message(backend_error_text, ephemeral=True)
-        return
-
-    cooldown_until = data.get("cooldown_until")
-    if cooldown_until:
-        until_dt = datetime.fromisoformat(cooldown_until)
-        if until_dt.tzinfo is None:
-            until_dt = until_dt.replace(tzinfo=timezone.utc)
-        if until_dt > datetime.now(timezone.utc):
-            # Fetch current mailbox
-            try:
-                mb_resp = requests.get(f"{TEMPMAIL_API}/get_active_mailbox", params={"created_by": user_id}, timeout=5)
-                mb = mb_resp.json()
-            except Exception as e:
-                error_msg = translation_manager.get_text("logging.mailbox_fetch_error", user_id, None, error=str(e))
-                logging.error(error_msg)
-                mb = {}
-            cooldown_text = translation_manager.get_text("tempmail.cooldown_active", user_id, interaction.guild_id, timestamp=int(until_dt.timestamp()))
-            msg = cooldown_text
-            if mb.get("address"):
-                current_email_text = translation_manager.get_text("tempmail.current_email", user_id, interaction.guild_id, email=mb['address'])
-                msg += f"\n{current_email_text}"
-                if mb.get("expires_at"):
-                    exp_dt = datetime.fromisoformat(mb["expires_at"])
-                    expires_time_text = translation_manager.get_text("tempmail.expires_time", user_id, interaction.guild_id, timestamp=int(exp_dt.timestamp()))
-                    msg += f"\n{expires_time_text}"
-                else:
-                    expires_never_text = translation_manager.get_text("tempmail.expires_never", user_id, interaction.guild_id)
-                    msg += f"\n{expires_never_text}"
-            await interaction.response.send_message(msg, ephemeral=True)
-            return
-
-    # Create mailbox
-    try:
-        payload = generate_mailbox_payload(user_id)
-        reg_resp = requests.post(f"{TEMPMAIL_API}/register_mailbox", json=payload, timeout=5)
-        reg_resp.raise_for_status()
-        mb_resp = requests.get(f"{TEMPMAIL_API}/get_active_mailbox", params={"created_by": user_id}, timeout=5)
-        mb = mb_resp.json()
-        address = mb.get("address")
-        expires = mb.get("expires_at")
-        if address:
-            email_created_text = translation_manager.get_text("tempmail.email_created", user_id, interaction.guild_id, email=address)
-            msg = email_created_text
-            if expires:
-                exp_dt = datetime.fromisoformat(expires)
-                valid_until_text = translation_manager.get_text("tempmail.valid_until", user_id, interaction.guild_id, timestamp=int(exp_dt.timestamp()))
-                msg += f"\n{valid_until_text}"
-            else:
-                no_expiry_text = translation_manager.get_text("tempmail.no_expiry", user_id, interaction.guild_id)
-                msg += f"\n{no_expiry_text}"
-            await interaction.response.send_message(msg, ephemeral=True)
-            created_log = translation_manager.get_text("logging.mailbox_created", user_id, None, user=user_id, address=address)
-            logging.info(created_log)
-            # Register in polling
-            user_sessions[user_id] = {
-                "address": address,
-                "expires": exp_dt.timestamp() if expires else None,
-                "last_checked": None
-            }
-        else:
-            creation_failed_text = translation_manager.get_text("tempmail.creation_failed", user_id, interaction.guild_id)
-            await interaction.response.send_message(creation_failed_text, ephemeral=True)
-            logging.error(translation_manager.get_text("logging.creation_failed_log", user_id, None, response=str(mb)))
-    except Exception as e:
-        logging.error(translation_manager.get_text("logging.creation_error_log", user_id, None, error=str(e)))
-        creation_error_text = translation_manager.get_text("tempmail.creation_error", user_id, interaction.guild_id)
-        await interaction.response.send_message(creation_error_text, ephemeral=True)
-
-# --- /resetmail command ---
-@bot.tree.command(name="resetmail", description=get_command_description("resetmail"))
-async def resetmail(interaction: discord.Interaction):
-    user_id = str(interaction.user.id)
-    used_reset_log = translation_manager.get_text("logging.user_used_resetmail", user_id, None, user=user_id)
-    logging.info(used_reset_log)
-    try:
-        # Delete mailbox(es)
-        get_mb = requests.get(f"{TEMPMAIL_API}/get_mailboxes_by_user", params={"created_by": user_id}, timeout=5)
-        get_mb.raise_for_status()
-        mboxes = get_mb.json()
-        logging.info(f"DEBUG: get_mailboxes_by_user returns: {mboxes}")
-        for mb in mboxes['mailboxes']:
-            resp = requests.post(f"{TEMPMAIL_API}/delete_mailbox", json=mb["address"], timeout=5)
-            resp.raise_for_status()
-            deleted_log = translation_manager.get_text("logging.mailbox_deleted", user_id, None, address=mb['address'], user=user_id, status=resp.status_code)
-            logging.info(deleted_log)
-        # Reset cooldown
-        resp2 = requests.post(f"{TEMPMAIL_API}/reset_cooldown", json=user_id, timeout=5)
-        resp2.raise_for_status()
-        cooldown_reset_log = translation_manager.get_text("logging.cooldown_reset", user_id, None, user=user_id)
-        logging.info(cooldown_reset_log)
-        reset_success_text = translation_manager.get_text("tempmail.reset_success", user_id, interaction.guild_id)
-        await interaction.response.send_message(f"🗑️ {reset_success_text}", ephemeral=True)
-        # Remove from polling
-        if user_id in user_sessions:
-            del user_sessions[user_id]
-    except Exception as e:
-        reset_error_log = translation_manager.get_text("logging.reset_error", user_id, None, user=user_id, error=str(e))
-        logging.error(reset_error_log)
-        reset_error_text = translation_manager.get_text("tempmail.reset_error", user_id, interaction.guild_id)
-        await interaction.response.send_message(reset_error_text, ephemeral=True)
-
-# EVENT LISTENERY
-
-@bot.event
-async def on_raw_message_delete(payload: RawMessageDeleteEvent):
-    if bot_locked:
-        return
-    if payload.guild_id is None:
-        return
-    guild_id = payload.guild_id
-    guild = bot.get_guild(guild_id)
-    await asyncio.sleep(1)
-    info = message_store.get(guild_id, {}).pop(str(payload.message_id), None)
-    log_dir = ensure_guild_log_dir(guild_id)
-    path_main = os.path.join(log_dir, f'{guild_id}_main.json')
-    main_entries = []
-    if os.path.exists(path_main):
-        with open(path_main, 'r', encoding='utf-8') as f:
-            main_entries = json.load(f)
-    main_entries = [e for e in main_entries if e["message_id"] != payload.message_id]
-    with open(path_main, 'w', encoding='utf-8') as f:
-        json.dump(main_entries, f, ensure_ascii=False, indent=2)
-    author = guild.get_member(info["author_id"]) or await bot.fetch_user(info["author_id"]) if info else translation_manager.get_text("logging.author_not_found", None, guild_id)
-    content = info["content"] if info else translation_manager.get_text("logging.no_content", None, guild_id)
-    now = datetime.now(timezone.utc)
-    executor = None
-    async for e in guild.audit_logs(limit=5, action=AuditLogAction.message_delete):
-        if e.extra.channel.id != payload.channel_id:
-            continue
-        delta = (now - e.created_at).total_seconds()
-        if delta > 5:
-            break
-        if e.extra.count != 1:
-            continue
-        if hasattr(author, 'id') and e.user.id == author.id:
-            executor = None
-        else:
-            executor = e.user
-        break
-    await log_action(
-        guild, "MessageDelete",
-        user=author, executor=executor,
-        fields=[
-            {"name": "Channel ID",   "value": str(payload.channel_id),    "inline": False},
-            {"name": "Message ID",   "value": str(payload.message_id),    "inline": False},
-            {"name": translation_manager.get_text("logging.content", None, guild_id),        "value": content,                   "inline": False}
-        ]
-    )
-    path_deleted = os.path.join(log_dir, f'{guild_id}_deleted.json')
-    deleted_logs = []
-    if os.path.exists(path_deleted):
-        with open(path_deleted, 'r', encoding='utf-8') as f:
-            deleted_logs = json.load(f)
-    deleted_entry = {
-        "message_id": payload.message_id,
-        "channel_id": payload.channel_id,
-        "author_id": info["author_id"] if info else None,
-        "content": content,
-        "deleted_by": executor.id if executor else None,
-        "timestamp": datetime.now(timezone.utc).isoformat()
-    }
-    deleted_logs.append(deleted_entry)
-    with open(path_deleted, 'w', encoding='utf-8') as f:
-        json.dump(deleted_logs, f, ensure_ascii=False, indent=2)
-
-@bot.event
-async def on_raw_message_edit(payload: RawMessageUpdateEvent):
-    if bot_locked:
-        return
-    if payload.guild_id is None:
-        return
-    guild_id = payload.guild_id
-    guild = bot.get_guild(guild_id)
-    log_dir = ensure_guild_log_dir(guild_id)
-    path_main = os.path.join(log_dir, f'{guild_id}_main.json')
-    main_entries = []
-    if os.path.exists(path_main):
-        with open(path_main, 'r', encoding='utf-8') as f:
-            main_entries = json.load(f)
-    old = next((e["content"] for e in main_entries if e["message_id"] == payload.message_id), translation_manager.get_text("logging.no_content", None, guild_id))
-    channel = guild.get_channel(payload.channel_id)
-    try:
-        new_msg = await channel.fetch_message(payload.message_id)
-        new = new_msg.content
-    except:
-        new = translation_manager.get_text("logging.no_content", None, guild_id)
-    for e in main_entries:
-        if e["message_id"] == payload.message_id:
-            e["content"] = new
-            break
-    with open(path_main, 'w', encoding='utf-8') as f:
-        json.dump(main_entries, f, ensure_ascii=False, indent=2)
-    message_store.setdefault(guild_id, {})[str(payload.message_id)] = {"author_id": message_store.get(guild_id, {}).get(str(payload.message_id), {}).get("author_id"), "content": new}
-    fields = [
-        {"name": "Channel ID", "value": str(payload.channel_id), "inline": False},
-        {"name": "Message ID", "value": str(payload.message_id), "inline": False},
-        {"name": translation_manager.get_text("logging.before", None, guild_id),      "value": old,                     "inline": False},
-        {"name": translation_manager.get_text("logging.after", None, guild_id),         "value": new,                     "inline": False}
-    ]
-    await log_action(guild, "MessageEdit", user=new_msg.author if 'new_msg' in locals() else translation_manager.get_text("logging.unknown_author", None, guild_id), fields=fields)
-    path_mod = os.path.join(log_dir, f'{guild_id}_modified.json')
-    mod_logs = []
-    if os.path.exists(path_mod):
-        with open(path_mod, 'r', encoding='utf-8') as f:
-            mod_logs = json.load(f)
-    mod_entry = {
-        "message_id": payload.message_id,
-        "channel_id": payload.channel_id,
-        "author_id": message_store.get(guild_id, {})
-                    .get(str(payload.message_id), {})
-                    .get("author_id"),
-        "before": old,
-        "after": new,
-        "timestamp": datetime.now(timezone.utc).isoformat()
-    }
-    mod_logs.append(mod_entry)
-    with open(path_mod, 'w', encoding='utf-8') as f:
-        json.dump(mod_logs, f, ensure_ascii=False, indent=2)
-
-
-
-
-@bot.event
-async def on_guild_channel_create(channel):
-    if bot_locked:
-        return
-    actor = None
-    async for e in channel.guild.audit_logs(limit=1, action=discord.AuditLogAction.channel_create):
-        if getattr(e.target, "id", None) == channel.id:
-            actor = e.user
-            break
-    await log_action(channel.guild, "ChannelCreate", actor or channel.guild.me, reason=channel.mention)
-
-@bot.event
-async def on_guild_channel_delete(channel):
-    if bot_locked:
-        return
-    actor = None
-    async for e in channel.guild.audit_logs(limit=1, action=discord.AuditLogAction.channel_delete):
-        if getattr(e.target, "id", None) == channel.id:
-            actor = e.user
-            break
-    await log_action(channel.guild, "ChannelDelete", actor or channel.guild.me, reason=f"`#{channel.name}`")
-
-@bot.event
-async def on_guild_channel_update(before, after):
-    if bot_locked:
-        return
-    actor = None
-    async for e in after.guild.audit_logs(limit=1, action=discord.AuditLogAction.channel_update):
-        if getattr(e.target, "id", None) == after.id:
-            actor = e.user
-            break
-    reason = f"`{before.name}` ➞ `{after.name}`"
-    await log_action(after.guild, "ChannelUpdate", actor or after.guild.me, reason=reason)
-
-@bot.event
-async def on_guild_role_create(role):
-    if bot_locked:
-        return
-    actor = None
-    async for e in role.guild.audit_logs(limit=1, action=discord.AuditLogAction.role_create):
-        if getattr(e.target, "id", None) == role.id:
-            actor = e.user
-            break
-    await log_action(role.guild, "RoleCreate", actor or role.guild.me, reason=str(role.id))
-
-@bot.event
-async def on_guild_role_delete(role):
-    if bot_locked:
-        return
-    try:
-        async for entry in role.guild.audit_logs(limit=1, action=discord.AuditLogAction.role_delete):
-            actor = None
-            if getattr(entry.target, "id", None) == role.id:
-                actor = entry.user
-                break
-            await log_action(role.guild, "RoleDelete", actor or role.guild.me, reason=f"{role.name}")
-            break
-    except discord.errors.NotFound:
-        guild_id_str = getattr(role.guild, 'id', translation_manager.get_text("logging.missing", None, None))
-        error_msg = translation_manager.get_text("logging.role_delete_logs_error", None, None, guild_id=guild_id_str)
-        print(f"[role_delete] {error_msg}")
-        return
-    except Exception as e:
-        other_error_msg = translation_manager.get_text("logging.other_error", None, None, error=str(e))
-        print(f"[role_delete] {other_error_msg}")
-
 @bot.event
 async def on_guild_role_delete(role):
     if bot_locked:

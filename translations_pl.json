@@ -1160,7 +1160,15 @@
     "hit": "DOBIERZ",
     "stand": "PASUJ",
     "reset_economy": "❗ Resetuj ekonomię",
-    "cancel": "Anuluj"
+    "cancel": "Anuluj",
+    "skip": "⏭️ Pomiń",
+    "pause": "⏸️ Wstrzymaj",
+    "resume": "▶️ Wznów",
+    "stop": "⏹️ Zatrzymaj",
+    "volume_up": "🔊 Głośniej",
+    "volume_down": "🔉 Ciszej",
+    "shuffle": "🔀 Przemieszaj",
+    "help": "❓ Pomoc"
   },
   "logs": {
     "mines_played_won": "{user} zagrał w mines i wygrał {amount}$ (miny: {mines})",

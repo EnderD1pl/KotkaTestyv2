@@ -1436,7 +1436,15 @@
     "hit": "HIT",
     "stand": "STAND",
     "reset_economy": "❗ Reset economy",
-    "cancel": "Cancel"
+    "cancel": "Cancel",
+    "skip": "⏭️ Skip",
+    "pause": "⏸️ Pause",
+    "resume": "▶️ Resume",
+    "stop": "⏹️ Stop",
+    "volume_up": "🔊 Volume Up",
+    "volume_down": "🔉 Volume Down",
+    "shuffle": "🔀 Shuffle",
+    "help": "❓ Help"
   },
   "logs": {
     "mines_played_won": "{user} played mines and won {amount}$ (mines: {mines})",
