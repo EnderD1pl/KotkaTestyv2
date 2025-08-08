@@ -5538,3 +5538,10 @@ async def on_member_remove(member):
 
 
 bot.run(token)
+# ==================== BOT START ====================
+if __name__ == '__main__':
+    if not token:
+        print('❌ DISCORD_TOKEN not found in environment variables!')
+        sys.exit(1)
+    print('🚀 Starting bot...')
+    bot.run(token)
