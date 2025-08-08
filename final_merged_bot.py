@@ -2053,7 +2053,7 @@ async def warn(ctx, user: discord.Member, reason: str):
 
 @app_commands.guild_only()
 @bot.tree.command(name="warns", description=get_command_description("warns"))
-@app_commands.describe(user="User (optional)")
+@app_commands.describe(user=get_parameter_description("user_optional"))
 async def warns(ctx, user: discord.Member = None):
     if not await check_changelog_and_module(ctx, "moderation"):
         return
@@ -2083,7 +2083,7 @@ async def warns(ctx, user: discord.Member = None):
 
 @app_commands.guild_only()
 @bot.tree.command(name="clearwarns", description=get_command_description("clearwarns"))
-@app_commands.describe(user="User")
+@app_commands.describe(user=get_parameter_description("user"))
 async def clearwarns(ctx, user: discord.Member):
     if not await check_changelog_and_module(ctx, "moderation"):
         return
@@ -2104,7 +2104,7 @@ async def clearwarns(ctx, user: discord.Member):
 
 @app_commands.guild_only()
 @bot.tree.command(name="ban", description=get_command_description("ban"))
-@app_commands.describe(user="User", reason="Reason", time="e.g. '1d','2h'")
+@app_commands.describe(user=get_parameter_description("user"), reason=get_parameter_description("reason"), time=get_parameter_description("time"))
 async def ban(ctx, user: discord.Member, reason: str = None, time: str = None):
     if not await check_changelog_and_module(ctx, "moderation"):
         return
@@ -2167,7 +2167,7 @@ async def kick(ctx, user: discord.Member, reason: str = None):
 
 @app_commands.guild_only()
 @bot.tree.command(name="timeout", description=get_command_description("timeout"))
-@app_commands.describe(user="User", time="e.g. '1d','2h','10m'", reason="Reason")
+@app_commands.describe(user=get_parameter_description("user"), time=get_parameter_description("time_long"), reason=get_parameter_description("reason"))
 async def timeout(ctx, user: discord.Member, time: str, reason: str = None):
     if not await check_changelog_and_module(ctx, "moderation"):
         return
@@ -2205,7 +2205,7 @@ async def timeout(ctx, user: discord.Member, time: str, reason: str = None):
 
 @app_commands.guild_only()
 @bot.tree.command(name="unban", description=get_command_description("unban"))
-@app_commands.describe(user_id="User ID")
+@app_commands.describe(user_id=get_parameter_description("user_id"))
 async def unban(ctx, user_id: str):
     if not await check_changelog_and_module(ctx, "moderation"):
         return
@@ -2670,7 +2670,7 @@ class MusicControlView(discord.ui.View):
         must_be_in_voice_or_admin_text = translation_manager.get_text("music.must_be_in_voice_or_admin", interaction.user.id, interaction.guild_id)
         return await interaction.response.send_message(must_be_in_voice_or_admin_text, ephemeral=True)
     
-    @discord.ui.button(label="⏭️", style=discord.ButtonStyle.primary, row=0)
+    @discord.ui.button(label=translation_manager.get_text("buttons.skip", None, None), style=discord.ButtonStyle.primary, row=0)
     async def skip_button(self, interaction: discord.Interaction, button: discord.ui.Button):
         if not self.check_permissions(interaction):
             return await self.send_permission_error(interaction)
@@ -2683,7 +2683,7 @@ class MusicControlView(discord.ui.View):
             nothing_playing_text = translation_manager.get_text("music.nothing_playing", interaction.user.id, interaction.guild_id)
             await interaction.response.send_message(nothing_playing_text, ephemeral=True)
     
-    @discord.ui.button(label="⏸️", style=discord.ButtonStyle.secondary, row=0)
+    @discord.ui.button(label=translation_manager.get_text("buttons.pause", None, None), style=discord.ButtonStyle.secondary, row=0)
     async def pause_button(self, interaction: discord.Interaction, button: discord.ui.Button):
         if not self.check_permissions(interaction):
             return await self.send_permission_error(interaction)
@@ -2697,7 +2697,7 @@ class MusicControlView(discord.ui.View):
             nothing_playing_text = translation_manager.get_text("music.nothing_playing", interaction.user.id, interaction.guild_id)
             await interaction.response.send_message(nothing_playing_text, ephemeral=True)
     
-    @discord.ui.button(label="▶️", style=discord.ButtonStyle.success, row=0)
+    @discord.ui.button(label=translation_manager.get_text("buttons.resume", None, None), style=discord.ButtonStyle.success, row=0)
     async def resume_button(self, interaction: discord.Interaction, button: discord.ui.Button):
         if not self.check_permissions(interaction):
             return await self.send_permission_error(interaction)
@@ -2711,7 +2711,7 @@ class MusicControlView(discord.ui.View):
             not_paused_text = translation_manager.get_text("music.playback_not_paused", interaction.user.id, interaction.guild_id)
             await interaction.response.send_message(not_paused_text, ephemeral=True)
     
-    @discord.ui.button(label="⏹️", style=discord.ButtonStyle.danger, row=0)
+    @discord.ui.button(label=translation_manager.get_text("buttons.stop", None, None), style=discord.ButtonStyle.danger, row=0)
     async def stop_button(self, interaction: discord.Interaction, button: discord.ui.Button):
         if not self.check_permissions(interaction):
             return await self.send_permission_error(interaction)
@@ -2720,7 +2720,7 @@ class MusicControlView(discord.ui.View):
         stopped_text = translation_manager.get_text("music.playback_stopped", interaction.user.id, interaction.guild_id)
         await interaction.response.send_message(stopped_text, ephemeral=True)
     
-    @discord.ui.button(label="🔊", style=discord.ButtonStyle.secondary, row=1)
+    @discord.ui.button(label=translation_manager.get_text("buttons.volume_up", None, None), style=discord.ButtonStyle.secondary, row=1)
     async def volume_up_button(self, interaction: discord.Interaction, button: discord.ui.Button):
         if not self.check_permissions(interaction):
             return await self.send_permission_error(interaction)
@@ -2737,7 +2737,7 @@ class MusicControlView(discord.ui.View):
             volume_max_text = translation_manager.get_text("music.volume_max", interaction.user.id, interaction.guild_id)
             await interaction.response.send_message(volume_max_text, ephemeral=True)
     
-    @discord.ui.button(label="🔉", style=discord.ButtonStyle.secondary, row=1)
+    @discord.ui.button(label=translation_manager.get_text("buttons.volume_down", None, None), style=discord.ButtonStyle.secondary, row=1)
     async def volume_down_button(self, interaction: discord.Interaction, button: discord.ui.Button):
         if not self.check_permissions(interaction):
             return await self.send_permission_error(interaction)
@@ -2754,7 +2754,7 @@ class MusicControlView(discord.ui.View):
             volume_min_text = translation_manager.get_text("music.volume_min", interaction.user.id, interaction.guild_id)
             await interaction.response.send_message(volume_min_text, ephemeral=True)
     
-    @discord.ui.button(label="🔀", style=discord.ButtonStyle.secondary, row=1)
+    @discord.ui.button(label=translation_manager.get_text("buttons.shuffle", None, None), style=discord.ButtonStyle.secondary, row=1)
     async def shuffle_button(self, interaction: discord.Interaction, button: discord.ui.Button):
         if not self.check_permissions(interaction):
             return await self.send_permission_error(interaction)
@@ -2768,7 +2768,7 @@ class MusicControlView(discord.ui.View):
             queue_too_short_text = translation_manager.get_text("music.queue_too_short", interaction.user.id, interaction.guild_id)
             await interaction.response.send_message(queue_too_short_text, ephemeral=True)
     
-    @discord.ui.button(label="❓", style=discord.ButtonStyle.secondary, row=1)
+    @discord.ui.button(label=translation_manager.get_text("buttons.help", None, None), style=discord.ButtonStyle.secondary, row=1)
     async def help_button(self, interaction: discord.Interaction, button: discord.ui.Button):
         help_title = translation_manager.get_text("music.help_title", None, None)
         embed = discord.Embed(title=help_title, color=discord.Color.blue())
