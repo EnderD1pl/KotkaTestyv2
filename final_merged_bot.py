@@ -199,10 +199,10 @@ async def init_sessions_from_backend():
                 "last_checked": None
             }
         # Use default language for system logs
-        success_msg = translation_manager.get_text("tempmail.initialization_success", count=len(user_sessions))
+        success_msg = translation_manager.get_text("tempmail.initialization_success", None, None, count=len(user_sessions))
         logging.info(success_msg)
     except Exception as e:
-        error_msg = translation_manager.get_text("tempmail.initialization_error", error=str(e))
+        error_msg = translation_manager.get_text("tempmail.initialization_error", None, None, error=str(e))
         logging.error(error_msg)
 
 
@@ -238,10 +238,10 @@ class ModuleManager:
             if resp.status_code == 200:
                 self.config = resp.json()
             else:
-                error_msg = translation_manager.get_text("logging.config_load_error", status=resp.status_code)
+                error_msg = translation_manager.get_text("logging.config_load_error", None, None, status=resp.status_code)
                 print(f"[ModuleManager] {error_msg}")
         except Exception as e:
-            error_msg = translation_manager.get_text("logging.panel_connection_error", error=str(e))
+            error_msg = translation_manager.get_text("logging.panel_connection_error", None, None, error=str(e))
             print(f"[ModuleManager] {error_msg}")
 
     def is_module_enabled(self, guild_id, module):
@@ -513,7 +513,7 @@ async def restart(interaction: discord.Interaction):
                         try:
                             await channel.send(embed=embed)
                         except Exception as e:
-                            error_msg = translation_manager.get_text("tempmail.send_shutdown_error", guild_id=guild_id, error=str(e))
+                            error_msg = translation_manager.get_text("tempmail.send_shutdown_error", None, int(guild_id), guild_id=guild_id, error=str(e))
                             print(error_msg)
             await bot.close()
 
