@@ -150,8 +150,16 @@ class TranslationManager:
 translation_manager = TranslationManager()
 
 def get_command_description(command_name, user_id=None, guild_id=None):
-    """Helper function to get translated command description"""
-    return translation_manager.get_text(f"command_descriptions.{command_name}", user_id, guild_id)
+    """Helper function to get translated command description - always English"""
+    # Force English for command descriptions by accessing English translations directly
+    keys = f"command_descriptions.{command_name}".split(".")
+    text = translation_manager.translations.get("en", {})
+    for key in keys:
+        if isinstance(text, dict) and key in text:
+            text = text[key]
+        else:
+            return f"[Missing command description: {command_name}]"
+    return text
 
 def get_parameter_description(param_name, user_id=None, guild_id=None):
     """Helper function to get translated parameter description"""
@@ -1245,7 +1253,7 @@ async def on_interaction(interaction: discord.Interaction):
 async def on_ready():
     global bot_locked
     # Using default language for startup logs since no user context
-    logged_msg = translation_manager.get_text("logging.logged_as", name=bot.user.name, id=bot.user.id)
+    logged_msg = translation_manager.get_text("logging.logged_as", None, None, name=bot.user.name, id=bot.user.id)
     print(logged_msg)
     expire_warns.start()
     cleanup_message_logs.start()
@@ -1686,12 +1694,6 @@ async def naptime(interaction: discord.Interaction):
                     print(error_msg)
         bot_locked_per_guild[int(guild_id)] = True
     changelog_channels = load_channel_data("changelog")
-    maintenance_title = translation_manager.get_text("bot_management.maintenance_title", interaction.user.id, interaction.guild_id)
-    embed = discord.Embed(
-        title=maintenance_title,
-        color=discord.Color.yellow(),
-        timestamp=datetime.now(timezone.utc)
-    )
 
     for guild_id, channel_id in changelog_channels.items():
         guild = bot.get_guild(int(guild_id))
@@ -1699,6 +1701,12 @@ async def naptime(interaction: discord.Interaction):
             channel = guild.get_channel(channel_id)
             if channel:
                 try:
+                    maintenance_title = translation_manager.get_text("bot_management.maintenance_title", None, int(guild_id))
+                    embed = discord.Embed(
+                        title=maintenance_title,
+                        color=discord.Color.yellow(),
+                        timestamp=datetime.now(timezone.utc)
+                    )
                     await channel.send(embed=embed)
                 except Exception as e:
                     print(f"Failed to send update info to server {guild_id}: {e}")
@@ -1735,18 +1743,18 @@ async def wakeywakey(interaction: discord.Interaction):
                     print(error_msg)
         bot_locked_per_guild[int(guild_id)] = False
     changelog_channels = load_channel_data("changelog")
-    maintenance_completed_title = translation_manager.get_text("bot_management.maintenance_completed", interaction.user.id, interaction.guild_id)
-    embed = discord.Embed(
-        title=maintenance_completed_title,
-        color=discord.Color.dark_green(),
-        timestamp=datetime.now(timezone.utc)
-    )
     for guild_id, channel_id in changelog_channels.items():
         guild = bot.get_guild(int(guild_id))
         if guild:
             channel = guild.get_channel(channel_id)
             if channel:
                 try:
+                    maintenance_completed_title = translation_manager.get_text("bot_management.maintenance_completed", None, int(guild_id))
+                    embed = discord.Embed(
+                        title=maintenance_completed_title,
+                        color=discord.Color.dark_green(),
+                        timestamp=datetime.now(timezone.utc)
+                    )
                     await channel.send(embed=embed)
                 except Exception as e:
                     print(f"Failed to send update info to server {guild_id}: {e}")
