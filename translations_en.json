@@ -1225,7 +1225,8 @@
     "deletelink": "Delete shortened link",
     "mylinks": "Show your links",
     "tempmail": "Create temporary email",
-    "resetmail": "Reset temporary email"
+    "resetmail": "Reset temporary email",
+    "resetgamestates": "Reset all game states (admin only)"
   },
   "test": {
     "translation_title": "Translation test"
@@ -1515,6 +1516,8 @@
     "alias_buy": "Role alias to buy (use /shop to see list)",
     "url": "Link to shorten",
     "custom": "Custom ending (optional)",
-    "short": "Short code of your link"
+    "short": "Short code of your link",
+    "days": "Number of days to extend",
+    "never": "Never expire (true/false)"
   }
 }

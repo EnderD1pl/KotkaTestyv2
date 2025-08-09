@@ -1239,7 +1239,9 @@
     "alias_buy": "Alias roli do kupienia (użyj /shop by zobaczyć listę)",
     "url": "Link do skrócenia",
     "custom": "Niestandardowe zakończenie (opcjonalnie)",
-    "short": "Krótki kod twojego linku"
+    "short": "Krótki kod twojego linku",
+    "days": "Liczba dni przedłużenia",
+    "never": "Nigdy nie wygasa (true/false)"
   },
   "changelog": {
     "version_choice": "Wersja (np. 1.2 -> 2.0)",
