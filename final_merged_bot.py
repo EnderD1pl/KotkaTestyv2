@@ -4453,7 +4453,7 @@ class MinesView(ui.View):
                 item.style = ButtonStyle.secondary
         await interaction.response.edit_message(embed=Embed(
             title=translation_manager.get_text("gambling.mines_win_title", self.user.id, self.guild_id),
-            description=translation_manager.get_text("gambling.mines_win_all", amount=win - self.bet, multiplier=self.get_multiplier(), board=board),
+            description=translation_manager.get_text("gambling.mines_win_all", self.user.id, self.guild_id, amount=win - self.bet, multiplier=self.get_multiplier(), board=board),
             color=0x22dd66
         ), view=self)
         log_econ(self.guild_id, translation_manager.get_text("logs.mines_played_won", self.user.id, self.guild_id, user=self.user.mention, amount=win - self.bet, mines=self.minecount), self.user.id)
@@ -4489,7 +4489,7 @@ class MinesView(ui.View):
                 item.style = ButtonStyle.secondary
         await interaction.response.edit_message(embed=Embed(
             title=translation_manager.get_text("gambling.mines_win_title", self.user.id, self.guild_id),
-            description=translation_manager.get_text("gambling.mines_win_partial", amount=win - self.bet, revealed=len(self.revealed), multiplier=self.get_multiplier(), board=board),
+            description=translation_manager.get_text("gambling.mines_win_partial", self.user.id, self.guild_id, amount=win - self.bet, revealed=len(self.revealed), multiplier=self.get_multiplier(), board=board),
             color=0x22dd66
         ), view=self)
         log_econ(self.guild_id, translation_manager.get_text("logs.mines_played_won", self.user.id, self.guild_id, user=self.user.mention, amount=win - self.bet, mines=self.minecount), self.user.id)
@@ -4528,7 +4528,7 @@ class MinesView(ui.View):
                 item.style = ButtonStyle.secondary
         await interaction.response.edit_message(embed=Embed(
             title=translation_manager.get_text("gambling.mines_lose_title", self.user.id, self.guild_id),
-            description=translation_manager.get_text("gambling.mines_lose", board=board, amount=self.bet),
+            description=translation_manager.get_text("gambling.mines_lose", self.user.id, self.guild_id, board=board, amount=self.bet),
             color=0xdd2222
         ), view=self)
         log_econ(self.guild_id, translation_manager.get_text("logs.mines_played_lost", self.user.id, self.guild_id, user=self.user.mention, amount=self.bet, mines=self.minecount), self.user.id)
@@ -4553,7 +4553,7 @@ class MinesView(ui.View):
                     item.label = "⬜"
                     item.style = ButtonStyle.secondary
         try:
-            timeout_text = translation_manager.get_text("gambling.mines_timeout", amount=loss)
+            timeout_text = translation_manager.get_text("gambling.mines_timeout", self.user.id, self.guild_id, amount=loss)
             await self.msg.edit(embed=Embed(description=timeout_text, color=0xFFA500), view=self)
         except:
             pass
