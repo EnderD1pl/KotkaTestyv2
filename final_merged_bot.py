@@ -1270,7 +1270,7 @@ async def on_ready():
             message_store[guild.id] = {}
     try:
         synced = await bot.tree.sync()
-        sync_msg = translation_manager.get_text("logging.synced_commands", count=len(synced))
+        sync_msg = translation_manager.get_text("logging.synced_commands", None, None, count=len(synced))
         print(sync_msg)
     except Exception:
         pass
@@ -1280,12 +1280,6 @@ async def on_ready():
     await init_sessions_from_backend()
 
     changelog_channels = load_channel_data("changelog")
-    title_text = translation_manager.get_text("bot_management.bot_online")
-    embed = discord.Embed(
-        title=title_text,
-        color=discord.Color.green(),
-        timestamp=datetime.now(timezone.utc)
-    )
 
     for guild_id, channel_id in changelog_channels.items():
         guild = bot.get_guild(int(guild_id))
@@ -1293,9 +1287,15 @@ async def on_ready():
             channel = guild.get_channel(channel_id)
             if channel:
                 try:
+                    title_text = translation_manager.get_text("bot_management.bot_online", None, int(guild_id))
+                    embed = discord.Embed(
+                        title=title_text,
+                        color=discord.Color.green(),
+                        timestamp=datetime.now(timezone.utc)
+                    )
                     await channel.send(embed=embed)
                 except Exception as e:
-                    error_msg = translation_manager.get_text("tempmail.send_startup_error", guild_id=guild_id, error=str(e))
+                    error_msg = translation_manager.get_text("tempmail.send_startup_error", None, int(guild_id), guild_id=guild_id, error=str(e))
                     print(error_msg)
 
     bot.loop.create_task(save_guilds_periodically(bot))
