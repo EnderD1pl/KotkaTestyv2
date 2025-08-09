@@ -450,21 +450,22 @@ async def restart(interaction: discord.Interaction):
     msg = translation_manager.get_text("bot_management.restarting", interaction.user.id, interaction.guild_id)
     await interaction.response.send_message(msg, ephemeral=True)
     changelog_channels = load_channel_data("changelog")
-    title_text = translation_manager.get_text("bot_management.restart_in_progress", interaction.user.id, interaction.guild_id)
-    embed = discord.Embed(
-        title=title_text,
-        color=discord.Color.blue(),
-        timestamp=datetime.now(timezone.utc)
-    )
+    
     for guild_id, channel_id in changelog_channels.items():
         guild = bot.get_guild(int(guild_id))
         if guild:
             channel = guild.get_channel(channel_id)
             if channel:
                 try:
+                    title_text = translation_manager.get_text("bot_management.restart_in_progress", None, int(guild_id))
+                    embed = discord.Embed(
+                        title=title_text,
+                        color=discord.Color.blue(),
+                        timestamp=datetime.now(timezone.utc)
+                    )
                     await channel.send(embed=embed)
                 except Exception as e:
-                    error_msg = translation_manager.get_text("tempmail.send_restart_error", guild_id=guild_id, error=str(e))
+                    error_msg = translation_manager.get_text("tempmail.send_restart_error", None, int(guild_id), guild_id=guild_id, error=str(e))
                     print(error_msg)
     await bot.close()
     os.execv(sys.executable, [sys.executable] + sys.argv)
