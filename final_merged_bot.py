@@ -2796,8 +2796,8 @@ class MusicControlView(discord.ui.View):
             value=help_commands_text,
             inline=False
         )
-        help_buttons_name = translation_manager.get_text("music.help_buttons", interaction.user.id, interaction.guild_id)
-        help_buttons_text = translation_manager.get_text("music.help_buttons_text", interaction.user.id, interaction.guild_id)
+        help_buttons_name = translation_manager.get_text("music.help_controls", interaction.user.id, interaction.guild_id)
+        help_buttons_text = translation_manager.get_text("music.help_controls_text", interaction.user.id, interaction.guild_id)
         embed.add_field(
             name=help_buttons_name,
             value=help_buttons_text,
@@ -2810,8 +2810,8 @@ class MusicControlView(discord.ui.View):
             value=help_permissions_text,
             inline=False
         )
-        help_services_name = translation_manager.get_text("music.help_services", interaction.user.id, interaction.guild_id)
-        help_services_text = translation_manager.get_text("music.help_services_text", interaction.user.id, interaction.guild_id)
+        help_services_name = translation_manager.get_text("music.help_supported", interaction.user.id, interaction.guild_id)
+        help_services_text = translation_manager.get_text("music.help_supported_text", interaction.user.id, interaction.guild_id)
         embed.add_field(
             name=help_services_name,
             value=help_services_text,
