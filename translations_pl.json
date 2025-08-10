@@ -1129,7 +1129,8 @@
     "deletelink": "Usuń skrócony link",
     "mylinks": "Pokaż swoje linki",
     "tempmail": "Stwórz tymczasowy email",
-    "resetmail": "Resetuj tymczasowy email"
+    "resetmail": "Resetuj tymczasowy email",
+    "resetgamestates": "Resetuj wszystkie stany gier (tylko admin)"
   },
   "debug": {
     "adding_to_queue_url": "DEBUG: Dodaję do kolejki, url: {url}",
