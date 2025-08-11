@@ -3991,12 +3991,22 @@ class CFView(ui.View):
         self.guild_id = guild_id
         self.msg = None
         
-        # Set button labels with translations
+        # Set button labels with translations - using direct method names instead of callback.__name__
         for item in self.children:
-            if hasattr(item, 'callback') and item.callback.__name__ == 'accept':
-                item.label = translation_manager.get_text("buttons.accept_bet", target.id, guild_id)
-            elif hasattr(item, 'callback') and item.callback.__name__ == 'decline':
-                item.label = translation_manager.get_text("buttons.decline_bet", target.id, guild_id)
+            if hasattr(item, 'callback') and hasattr(item.callback, '__name__'):
+                # For older discord.py versions with __name__ attribute
+                if item.callback.__name__ == 'accept':
+                    item.label = translation_manager.get_text("buttons.accept_bet", target.id, guild_id)
+                elif item.callback.__name__ == 'decline':
+                    item.label = translation_manager.get_text("buttons.decline_bet", target.id, guild_id)
+            elif hasattr(item, 'callback'):
+                # For newer discord.py versions - check the actual callback function
+                callback_func = getattr(item.callback, 'func', None) or getattr(item.callback, 'callback', None)
+                if callback_func and hasattr(callback_func, '__name__'):
+                    if callback_func.__name__ == 'accept':
+                        item.label = translation_manager.get_text("buttons.accept_bet", target.id, guild_id)
+                    elif callback_func.__name__ == 'decline':
+                        item.label = translation_manager.get_text("buttons.decline_bet", target.id, guild_id)
 
     async def interaction_check(self, interaction):
         return interaction.user.id == self.target.id
