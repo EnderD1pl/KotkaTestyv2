@@ -2662,11 +2662,10 @@ async def create_control_embed(player):
         remaining_time = max(current.get('duration', 0) - elapsed_time, 0)
         
         minutes, seconds = divmod(int(remaining_time), 60)
-        time_str = f"{minutes}:{seconds:02d}"
         
         now_playing_text = translation_manager.get_text("music.now_playing", None, player.guild_id)
         added_by_text = translation_manager.get_text("music.added_by", None, player.guild_id, user=current['requester'].mention)
-        remaining_text = translation_manager.get_text("music.remaining_time", None, player.guild_id, time=time_str)
+        remaining_text = translation_manager.get_text("music.remaining_time", None, player.guild_id, minutes=minutes, seconds=seconds)
         embed.add_field(
             name=now_playing_text,
             value=f"**[{current['title']}]({current.get('webpage_url', '')})**\n"
