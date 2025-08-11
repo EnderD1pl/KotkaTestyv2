@@ -2900,7 +2900,7 @@ async def play_next_track(player):
             print(f"Error in after_playing: {e}")
 
     player.voice_client.play(source, after=after_playing)
-    playback_started_msg = translation_manager.get_text("music.playback_started", None, None, title=track_info['title'])
+    playback_started_msg = translation_manager.get_text("messages.playback_started", None, None, title=track_info['title'])
     print(playback_started_msg)
     
     await update_control_message(player)

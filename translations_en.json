@@ -336,7 +336,7 @@
     "help_supported_text": "YouTube, SoundCloud, Bandcamp and others supported by yt-dlp",
     "connection_timeout": "❌ Failed to connect to voice channel (timeout).",
     "connection_error": "❌ Error connecting to channel: {error}",
-    "remaining_time": "Remaining: {time}",
+    "remaining_time": "Remaining: {minutes}:{seconds:02d}",
     "and_more": "... and {count} more",
     "player_title": "🎵 Music Player",
     "remaining": "Remaining: {time}",
