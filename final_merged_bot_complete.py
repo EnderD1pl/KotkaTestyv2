@@ -4327,9 +4327,15 @@ async def blackjack_cmd(inter: discord.Interaction, amount: int):
     set_user_game(inter.guild.id, inter.user.id, True)
     view = BlackjackView(inter.user, amount, inter.guild.id)
     blackjack_title = translation_manager.get_text("gambling.blackjack_title", inter.user.id, inter.guild_id)
+    
+    # Create initial embed showing the cards
+    pv = view.value(view.p_hand)
+    dv = view.d_hand[0]  # Show only first dealer card
+    initial_description = translation_manager.get_text("gambling.blackjack_cards", inter.user.id, inter.guild_id, hand=view.p_hand, value=pv, dealer=dv)
+    
     await inter.response.send_message(embed=Embed(
         title=blackjack_title,
-        description=translation_manager.get_text("gambling.blackjack_desc", inter.user.id, inter.guild_id),
+        description=initial_description,
         color=0x3366ff
     ), view=view, ephemeral=True)
     view.msg = await inter.original_response()
