@@ -2599,11 +2599,10 @@ async def create_control_embed(player):
         remaining_time = max(current.get('duration', 0) - elapsed_time, 0)
         
         minutes, seconds = divmod(int(remaining_time), 60)
-        time_str = f"{minutes}:{seconds:02d}"
         
         now_playing_text = translation_manager.get_text("music.now_playing", None, player.guild_id)
         added_by_text = translation_manager.get_text("music.added_by", None, player.guild_id, user=current['requester'].mention)
-        remaining_text = translation_manager.get_text("music.remaining_time", None, player.guild_id, time=time_str)
+        remaining_text = translation_manager.get_text("music.remaining_time", None, player.guild_id, minutes=minutes, seconds=seconds)
         embed.add_field(
             name=now_playing_text,
             value=f"**[{current['title']}]({current.get('webpage_url', '')})**\n"
@@ -3904,12 +3903,22 @@ class CFView(ui.View):
         self.guild_id = guild_id
         self.msg = None
         
-        # Set button labels with translations
+        # Set button labels with translations - using direct method names instead of callback.__name__
         for item in self.children:
-            if hasattr(item, 'callback') and item.callback.__name__ == 'accept':
-                item.label = translation_manager.get_text("buttons.accept_bet", target.id, guild_id)
-            elif hasattr(item, 'callback') and item.callback.__name__ == 'decline':
-                item.label = translation_manager.get_text("buttons.decline_bet", target.id, guild_id)
+            if hasattr(item, 'callback') and hasattr(item.callback, '__name__'):
+                # For older discord.py versions with __name__ attribute
+                if item.callback.__name__ == 'accept':
+                    item.label = translation_manager.get_text("buttons.accept_bet", target.id, guild_id)
+                elif item.callback.__name__ == 'decline':
+                    item.label = translation_manager.get_text("buttons.decline_bet", target.id, guild_id)
+            elif hasattr(item, 'callback'):
+                # For newer discord.py versions - check the actual callback function
+                callback_func = getattr(item.callback, 'func', None) or getattr(item.callback, 'callback', None)
+                if callback_func and hasattr(callback_func, '__name__'):
+                    if callback_func.__name__ == 'accept':
+                        item.label = translation_manager.get_text("buttons.accept_bet", target.id, guild_id)
+                    elif callback_func.__name__ == 'decline':
+                        item.label = translation_manager.get_text("buttons.decline_bet", target.id, guild_id)
 
     async def interaction_check(self, interaction):
         return interaction.user.id == self.target.id
