@@ -1,3 +1,10 @@
+# =====================================
+# DISCORD BOT - KOTKA TESTY V2
+# =====================================
+# Wielofunkcyjny bot Discord z systemem tłumaczeń
+# Funkcje: Moderacja, Muzyka, Ekonomia, Gry, AI
+# Język: Polski/Angielski (system automatycznego tłumaczenia)
+
 import discord
 import requests
 import logging
@@ -21,22 +28,29 @@ import spotipy
 from spotipy.oauth2 import SpotifyClientCredentials
 from discord import FFmpegPCMAudio, RawMessageDeleteEvent, RawMessageUpdateEvent, AuditLogAction
 
+# Globalna zmienna - blokada AI (naptime/wakeywake)
 bot_locked = False
 
 load_dotenv()
 
-# ==================== TRANSLATION SYSTEM ====================
+# =====================================
+# SYSTEM TŁUMACZEŃ WIELOJĘZYCZNYCH
+# =====================================
+# Automatyczne tłumaczenie wszystkich tekstów bota
+# Obsługuje fallback do języka domyślnego przy brakujących kluczach
+# Pliki: translations_pl.json, translations_en.json
+
 class TranslationManager:
     def __init__(self):
-        self.translations = {}
-        self.user_languages = {}  # Store user language preferences
-        self.guild_languages = {}  # Store guild language preferences
-        self.default_language = "pl"
-        self.load_translations()
-        self.load_language_preferences()
+        self.translations = {}  # Wszystkie załadowane tłumaczenia
+        self.user_languages = {}  # Preferencje językowe użytkowników
+        self.guild_languages = {}  # Preferencje językowe serwerów  
+        self.default_language = "pl"  # Domyślny język (fallback)
+        self.load_translations()  # Ładuj pliki JSON z tłumaczeniami
+        self.load_language_preferences()  # Ładuj zapisane preferencje
 
     def load_translations(self):
-        """Load translation files"""
+        """Ładuje pliki tłumaczeń z JSON (translations_pl.json, translations_en.json)"""
         try:
             with open("translations_pl.json", "r", encoding="utf-8") as f:
                 self.translations["pl"] = json.load(f)
@@ -111,7 +125,7 @@ class TranslationManager:
         return self.default_language
 
     def get_text(self, key_path, user_id=None, guild_id=None, **kwargs):
-        """Get translated text for a user/guild"""
+        """Główna funkcja tłumaczenia - pobiera tekst w odpowiednim języku z fallback"""
         language = self.get_user_language(user_id, guild_id)
         
         # Debug: print language selection
@@ -146,11 +160,11 @@ class TranslationManager:
         
         return text
 
-# Initialize translation manager
+# Inicjalizacja managera tłumaczeń (globalny obiekt)
 translation_manager = TranslationManager()
 
 def get_command_description(command_name, user_id=None, guild_id=None):
-    """Helper function to get translated command description - always English"""
+    """Pomocnicza funkcja - opisy komend zawsze po angielsku (zgodnie z Discord API)"""
     # Force English for command descriptions by accessing English translations directly
     keys = f"command_descriptions.{command_name}".split(".")
     text = translation_manager.translations.get("en", {})
@@ -438,8 +452,11 @@ KEY RULES:
 
 Your style is colloquial, ironic, and brief. You sound like a real teenager talking to friends on Discord.'''
 
-# === Missing AI admin slash commands and bot management commands from bot.py ===
+# =====================================
+# KOMENDY ADMINISTRACYJNE & ZARZĄDZANIE BOTEM
+# =====================================
 
+# /restart - Restart bota (tylko autoryzowani użytkownicy)
 @bot.tree.command(name="restart", description=get_command_description("restart"))
 @app_commands.checks.has_permissions(administrator=True)
 async def restart(interaction: discord.Interaction):
@@ -470,6 +487,7 @@ async def restart(interaction: discord.Interaction):
     await bot.close()
     os.execv(sys.executable, [sys.executable] + sys.argv)
 
+# /emergency - Awaryjne wyłączenie bota (tylko autoryzowani użytkownicy)
 @bot.tree.command(name="emergency", description=get_command_description("emergency"))
 @app_commands.checks.has_permissions(administrator=True)
 async def restart(interaction: discord.Interaction):
@@ -700,6 +718,7 @@ async def refreshusers(interaction: discord.Interaction):
     await interaction.response.send_message(msg, ephemeral=True)
     await log_action(interaction.guild, "RefreshAIUsers", interaction.user, executor=interaction.user)
 
+# /language - Zmiana języka bota (personalny/dla serwera)
 @bot.tree.command(name="language", description=get_command_description("language"))
 @app_commands.describe(
     language=get_parameter_description("language"),
@@ -1240,6 +1259,11 @@ async def save_guilds_periodically(bot):
             json.dump([{"id": str(g.id), "name": g.name} for g in bot.guilds], f, ensure_ascii=False)
         await asyncio.sleep(30)
 
+# =====================================
+# EVENT HANDLERS BOTA
+# =====================================
+
+# Event - Każda interakcja (sprawdza globalną blokadę AI)
 @bot.event
 async def on_interaction(interaction: discord.Interaction):
     if bot_locked:
@@ -1251,6 +1275,7 @@ async def on_interaction(interaction: discord.Interaction):
         return
 
 
+# Event - Bot gotowy do pracy (startup, sync komend, powiadomienia)
 @bot.event
 async def on_ready():
     global bot_locked
@@ -1635,6 +1660,7 @@ async def setaichannel(interaction: discord.Interaction, channel: discord.TextCh
     print(saved_msg)
     await log_action(interaction.guild, "SetAIChannel", interaction.user, executor=interaction.user)
 
+# /setchangelogchannel - Ustawia kanał changelog na serwerze (admin)
 @app_commands.guild_only()
 @bot.tree.command(name="setchangelogchannel", description=get_command_description("setchangelogchannel"))
 @app_commands.describe(channel=get_parameter_description("changelog_channel"))
@@ -1666,6 +1692,7 @@ async def setchangelogchannel(ctx, channel: discord.TextChannel):
     await channel.send(embed=embed)
     
 
+# /naptime - Blokuje dostęp do AI na wszystkich serwerach i DM (globalne wyłączenie)
 @bot.tree.command(name="naptime", description=get_command_description("naptime"))
 async def naptime(interaction: discord.Interaction):
     if interaction.user.id not in AUTHORIZED_USERS:
@@ -1715,6 +1742,7 @@ async def naptime(interaction: discord.Interaction):
 
     await bot.change_presence(status=discord.Status.invisible)
 
+# /wakeywakey - Odblokowuje dostęp do AI na wszystkich serwerach i DM (globalne włączenie)
 @bot.tree.command(name="wakeywakey", description=get_command_description("wakeywakey"))
 async def wakeywakey(interaction: discord.Interaction):
     if interaction.user.id not in AUTHORIZED_USERS:
@@ -2015,6 +2043,11 @@ async def permslist(ctx):
 
     await ctx.followup.send(embed=embed, ephemeral=True)
 
+# =====================================
+# KOMENDY MODERACYJNE
+# =====================================
+
+# /warn - Ostrzeż użytkownika (moduł moderacji)
 @app_commands.guild_only()
 @bot.tree.command(name="warn", description=get_command_description("warn"))
 @app_commands.describe(user=get_parameter_description("user"), reason=get_parameter_description("reason"))
@@ -2120,6 +2153,7 @@ async def clearwarns(ctx, user: discord.Member):
         no_warnings_text = translation_manager.get_text("general.no_warnings_to_remove", ctx.user.id, ctx.guild.id)
         await ctx.followup.send(embed=discord.Embed(description=no_warnings_text, color=discord.Color.blue()))
 
+# /ban - Zbanuj użytkownika (opcjonalnie czasowo)
 @app_commands.guild_only()
 @bot.tree.command(name="ban", description=get_command_description("ban"))
 @app_commands.describe(user=get_parameter_description("user"), reason=get_parameter_description("reason"), time=get_parameter_description("time"))
@@ -3077,6 +3111,13 @@ def is_youtube_url(url):
     """Sprawdza czy URL to YouTube"""
     return any(domain in url for domain in ['youtube.com', 'youtu.be', 'music.youtube.com'])
 
+# =====================================
+# KOMENDY MUZYCZNE 
+# =====================================
+# System odtwarzania muzyki z YouTube i Spotify
+# Obsługuje kolejki, pomijanie, zatrzymywanie
+
+# /play - Odtwórz muzykę z URL lub wyszukiwania (YouTube/Spotify)
 @app_commands.guild_only()
 @bot.tree.command(name="play", description=get_command_description("play"))
 @app_commands.describe(query=get_parameter_description("query"))
@@ -3202,6 +3243,7 @@ async def play_music(interaction: discord.Interaction, query: str):
     
     await interaction.followup.send(embed=embed)
 
+# /queue - Pokaż aktualną kolejkę odtwarzania
 @app_commands.guild_only()
 @bot.tree.command(name="queue", description=get_command_description("queue"))
 async def show_queue(interaction: discord.Interaction):
@@ -3259,6 +3301,7 @@ async def show_queue(interaction: discord.Interaction):
     
     await interaction.followup.send(embed=embed, ephemeral=True)
 
+# /skip - Pomiń aktualny utwór i przejdź do następnego w kolejce
 @app_commands.guild_only()
 @bot.tree.command(name="skip", description=get_command_description("skip"))
 async def skip_track(interaction: discord.Interaction):
@@ -3283,6 +3326,7 @@ async def skip_track(interaction: discord.Interaction):
         nothing_playing_text = translation_manager.get_text("music.nothing_playing", interaction.user.id, interaction.guild_id)
         await interaction.response.send_message(nothing_playing_text, ephemeral=True)
 
+# /stop - Zatrzymaj odtwarzanie i rozłącz bota z kanału głosowego
 @app_commands.guild_only()
 @bot.tree.command(name="stop", description=get_command_description("stop"))
 async def stop_command(interaction: discord.Interaction):
@@ -3326,6 +3370,13 @@ async def set_econlogs(inter: discord.Interaction, channel: discord.TextChannel)
     econlogs_set_text = translation_manager.get_text("economy.econlogs_set", inter.user.id, inter.guild.id, channel=channel.mention)
     await inter.response.send_message(embed=eco_success(econlogs_set_text), ephemeral=True)
 
+# =====================================
+# KOMENDY EKONOMICZNE
+# =====================================
+# System ekonomiczny z portfelem, bankiem, sklepem
+# Obsługuje transfery, daily income, prace
+
+# /balance - Sprawdź swój stan konta (portfel + bank)
 @app_commands.guild_only()
 @bot.tree.command(name="balance", description=get_command_description("balance"))
 async def balance_cmd(inter: discord.Interaction):
@@ -3511,6 +3562,7 @@ async def collect_cmd(inter: discord.Interaction):
     log_econ(inter.guild.id, log_msg, inter.user.id)
     await inter.response.send_message(embed=embed)
 
+# /work - Idź do pracy za pieniądze (cooldown 1 godzina)
 @app_commands.guild_only()
 @bot.tree.command(name="work", description=get_command_description("work"))
 async def work_cmd(inter: discord.Interaction):
@@ -3867,6 +3919,13 @@ def rps_winner(a, b):
     if (a, b) in [('rock','scissors'), ('paper','rock'), ('scissors','paper')]: return 1
     return 2
 
+# =====================================
+# KOMENDY HAZARDOWE & GRY
+# =====================================
+# System gier hazardowych i rozrywkowych
+# Kamień-papier-nożyce, ruletka, blackjack, mines
+
+# /rps - Kamień-papier-nożyce za pieniądze (vs bot lub inny gracz)
 @app_commands.guild_only()
 @bot.tree.command(name="rps", description=get_command_description("rps"))
 @app_commands.describe(amount=get_parameter_description("amount"), user=get_parameter_description("opponent"))
@@ -4014,6 +4073,7 @@ class CFView(ui.View):
         log_econ(self.guild_id, log_msg2, self.target.id)
         self.stop()
 
+# /cf - Rzut monetą (heads/tails) za pieniądze (vs bot lub inny gracz)
 @app_commands.guild_only()
 @bot.tree.command(name="cf", description=get_command_description("cf"))
 @app_commands.describe(amount=get_parameter_description("amount"), side=get_parameter_description("side"), user=get_parameter_description("opponent"))
@@ -4167,6 +4227,7 @@ class RouletteView(ui.View):
         set_user_game(self.guild_id, self.user.id, False)
         self.stop()
 
+# /roulette - Ruletka (red/black x2, green x10)
 @app_commands.guild_only()
 @bot.tree.command(name="roulette", description=get_command_description("roulette"))
 @app_commands.describe(amount=get_parameter_description("amount"))
@@ -4330,6 +4391,7 @@ class BlackjackView(ui.View):
         self.stopped = True
         self.stop()
 
+# /blackjack - Blackjack 1v1 przeciwko botowi
 @app_commands.guild_only()
 @bot.tree.command(name="blackjack", description=get_command_description("blackjack"))
 @app_commands.describe(amount=get_parameter_description("amount"))
@@ -4564,6 +4626,7 @@ class MinesView(ui.View):
         self.stopped = True
         self.stop()
 
+# /mines - Gra Mines 5x5 (unikaj min, zbieraj mnożniki)
 @app_commands.guild_only()
 @bot.tree.command(name="mines", description=get_command_description("mines"))
 @app_commands.describe(amount=get_parameter_description("amount"), mines=get_parameter_description("mines"))
@@ -4734,6 +4797,7 @@ async def buy_cmd(inter: discord.Interaction, alias: str):
     purchase_log = translation_manager.get_text("logging.role_purchase", None, None, username=inter.user.name, display_name=inter.user.display_name, user_id=inter.user.id, role_name=role.name, price=item['price'], alias=alias)
     log_econ(inter.guild.id, purchase_log, inter.user.id)
 
+# /shop - Pokaż sklep z rolami do kupienia
 @app_commands.guild_only()
 @bot.tree.command(name="shop", description=get_command_description("shop"))
 async def shop_cmd(inter: discord.Interaction):
@@ -5552,14 +5616,17 @@ async def on_member_remove(member):
         reason = translation_manager.get_text("logging.member_since", None, member.guild.id, date=join.strftime('%Y-%m-%d %H:%M:%S'))
     else:
         reason = translation_manager.get_text("logging.no_join_date", None, member.guild.id)
-    await log_action(member.guild, "MemberLeave", member, reason=reason)
+        await log_action(member.guild, "MemberLeave", member, reason=reason)
 
 
-bot.run(token)
-# ==================== BOT START ====================
+# =====================================
+# URUCHOMIENIE BOTA
+# =====================================
+# Sprawdza token Discord i uruchamia bota
+
 if __name__ == '__main__':
     if not token:
         print('❌ DISCORD_TOKEN not found in environment variables!')
         sys.exit(1)
-    print('🚀 Starting bot...')
+    print('🚀 Starting Kotka Testy V2 Bot...')
     bot.run(token)
