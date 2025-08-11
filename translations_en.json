@@ -714,7 +714,9 @@
     "role_delete_logs_error": "Cannot fetch role deletion logs, guild {guild_id} unknown.",
     "other_error": "Other error: {error}",
     "role_purchase": "{username} ({display_name}) [{user_id}] bought role {role_name} for {price}$ (alias: {alias})",
-    "gambling_roulette_timeout": "Roulette timeout, money returned to {user}"
+    "gambling_roulette_timeout": "Roulette timeout, money returned to {user}",
+    "gambling_roulette_win": "{user} won roulette ({color}) +{amount}$",
+    "gambling_roulette_loss": "{user} lost roulette ({color}) -{amount}$"
   },
   "reaction_roles": {
     "rrcreate": "Add reaction role to message",

@@ -701,6 +701,8 @@
     "no_join_date": "Brak daty dołączenia",
     "role_purchase": "{username} ({display_name}) [{user_id}] kupił rolę {role_name} za {price}$ (alias: {alias})",
     "gambling_roulette_timeout": "Ruletka timeout, kasa wróciła do {user}",
+    "gambling_roulette_win": "{user} wygrał w ruletce ({color}) +{amount}$",
+    "gambling_roulette_loss": "{user} przegrał w ruletce ({color}) -{amount}$",
     "creation_failed_log": "Niepowodzenie tworzenia skrzynki pocztowej dla użytkownika {user}: {response}",
     "active_mailbox_error": "Błąd podczas pobierania aktywnej skrzynki pocztowej: {error}",
     "reset_error_log": "Błąd podczas resetowania poczty dla użytkownika {user}: {error}",
