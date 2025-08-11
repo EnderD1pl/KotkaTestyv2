@@ -353,7 +353,7 @@
     "stop_description": "Stop playback and disconnect bot",
     "query": "Track/playlist link or search term",
     "control_permissions_check": "Check if user can use controls",
-    "added_by": "Added by: {user}",
+    "added_by": "Added by",
     "search_timeout": "Timeout while searching '{query}'",
     "search_error": "Error while searching '{query}': {error}",
     "voice_client_error": "Voice client is not connected or available"

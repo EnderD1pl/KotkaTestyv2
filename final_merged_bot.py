@@ -2664,12 +2664,12 @@ async def create_control_embed(player):
         minutes, seconds = divmod(int(remaining_time), 60)
         
         now_playing_text = translation_manager.get_text("music.now_playing", None, player.guild_id)
-        added_by_text = translation_manager.get_text("music.added_by", None, player.guild_id, user=current['requester'].mention)
+        added_by_text = translation_manager.get_text("music.added_by", None, player.guild_id)
         remaining_text = translation_manager.get_text("music.remaining_time", None, player.guild_id, minutes=minutes, seconds=seconds)
         embed.add_field(
             name=now_playing_text,
             value=f"**[{current['title']}]({current.get('webpage_url', '')})**\n"
-                  f"{added_by_text}\n"
+                  f"{added_by_text}: {current['requester'].mention}\n"
                   f"{remaining_text}",
             inline=False
         )
@@ -2681,10 +2681,10 @@ async def create_control_embed(player):
     next_track = player.get_next_track()
     next_track_text = translation_manager.get_text("music.next_track", None, player.guild_id)
     if next_track:
-        added_by_text = translation_manager.get_text("music.added_by", None, player.guild_id, user=next_track['requester'].mention)
+        added_by_text = translation_manager.get_text("music.added_by", None, player.guild_id)
         embed.add_field(
             name=next_track_text,
-            value=f"**{next_track['title']}**\n{added_by_text}",
+            value=f"**{next_track['title']}**\n{added_by_text}: {next_track['requester'].mention}",
             inline=False
         )
     else:
