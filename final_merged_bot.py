@@ -3706,12 +3706,16 @@ active_gambling_sessions = {}
 
 def is_user_in_game(guild_id, user_id):
     eco = get_user_eco(guild_id, user_id)
-    return eco.get('in_game', False)
+    in_game = eco.get('in_game', False)
+    if in_game:
+        print(f"🎮 DEBUG: is_user_in_game({guild_id}, {user_id}) = {in_game} - User is stuck in game!")
+    return in_game
 
 def set_user_game(guild_id, user_id, val: bool):
     eco = get_user_eco(guild_id, user_id)
     eco['in_game'] = val
     update_user_eco(guild_id, user_id, eco)
+    print(f"🎮 DEBUG: set_user_game({guild_id}, {user_id}, {val}) - User game state: {val}")
 
 async def block_game(inter, *user_ids):
     for uid in user_ids:
@@ -4904,6 +4908,42 @@ async def resetecon_cmd(inter: discord.Interaction):
     )
 
 @app_commands.guild_only()
+# /checkgamestate - Sprawdź stan gry użytkownika (debug)
+@bot.tree.command(name="checkgamestate", description="Check if user is stuck in game state (debug)")
+@app_commands.describe(user="User to check (optional, defaults to yourself)")
+async def checkgamestate(inter: discord.Interaction, user: discord.Member = None):
+    if not await check_changelog_and_module(inter, "economy"):
+        return
+    
+    target_user = user or inter.user
+    is_in_game = is_user_in_game(inter.guild.id, target_user.id)
+    
+    embed = discord.Embed(
+        title="🎮 Game State Check",
+        color=discord.Color.red() if is_in_game else discord.Color.green()
+    )
+    
+    embed.add_field(
+        name="User",
+        value=target_user.mention,
+        inline=True
+    )
+    
+    embed.add_field(
+        name="Status",
+        value="🔴 IN GAME (STUCK)" if is_in_game else "🟢 NOT IN GAME",
+        inline=True
+    )
+    
+    if is_in_game:
+        embed.add_field(
+            name="Solution",
+            value="Use `/resetgamestates` (admin only) to fix",
+            inline=False
+        )
+    
+    await inter.response.send_message(embed=embed, ephemeral=True)
+
 @bot.tree.command(name="resetgamestates", description=get_command_description("resetgamestates"))
 async def resetgamestates(inter: discord.Interaction):
     if not await check_changelog_and_module(inter, "economy"):
