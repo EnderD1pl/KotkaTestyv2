@@ -1167,7 +1167,10 @@ async def check_new_mail():
         if new_msgs:
             logging.info(translation_manager.get_text("logging.new_message", user_id, None, user=user_id, address=addr, count=len(new_msgs)))
             try:
-                user = await bot.fetch_user(int(user_id))
+                if user_id:
+                    user = await bot.fetch_user(int(user_id))
+                else:
+                    continue
                 for m in new_msgs:
                     try:
                         mail_body = m.get('content') or m.get('body', '')
@@ -5432,7 +5435,16 @@ async def on_raw_message_delete(payload: RawMessageDeleteEvent):
     main_entries = [e for e in main_entries if e["message_id"] != payload.message_id]
     with open(path_main, 'w', encoding='utf-8') as f:
         json.dump(main_entries, f, ensure_ascii=False, indent=2)
-    author = guild.get_member(info["author_id"]) or await bot.fetch_user(info["author_id"]) if info else translation_manager.get_text("logging.author_not_found", None, guild_id)
+    # Get author info safely
+    if info and info.get("author_id"):
+        author = guild.get_member(info["author_id"])
+        if not author:
+            try:
+                author = await bot.fetch_user(info["author_id"])
+            except:
+                author = translation_manager.get_text("logging.author_not_found", None, guild_id)
+    else:
+        author = translation_manager.get_text("logging.author_not_found", None, guild_id)
     content = info["content"] if info else translation_manager.get_text("logging.no_content", None, guild_id)
     now = datetime.now(timezone.utc)
     executor = None
