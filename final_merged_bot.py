@@ -499,18 +499,19 @@ async def restart(interaction: discord.Interaction):
             shutting_down_msg = translation_manager.get_text("bot_management.shutting_down", interaction2.user.id, interaction2.guild_id)
             await interaction2.response.edit_message(content=shutting_down_msg, embed=None, view=None)
             changelog_channels = load_channel_data("changelog")
-            title_offline = translation_manager.get_text("bot_management.bot_offline")
-            embed = discord.Embed(
-                title=title_offline,
-                color=discord.Color.red(),
-                timestamp=datetime.now(timezone.utc)
-            )
+            
             for guild_id, channel_id in changelog_channels.items():
                 guild = bot.get_guild(int(guild_id))
                 if guild:
                     channel = guild.get_channel(channel_id)
                     if channel:
                         try:
+                            title_offline = translation_manager.get_text("bot_management.bot_offline", None, int(guild_id))
+                            embed = discord.Embed(
+                                title=title_offline,
+                                color=discord.Color.red(),
+                                timestamp=datetime.now(timezone.utc)
+                            )
                             await channel.send(embed=embed)
                         except Exception as e:
                             error_msg = translation_manager.get_text("tempmail.send_shutdown_error", None, int(guild_id), guild_id=guild_id, error=str(e))
