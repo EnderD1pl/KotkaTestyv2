@@ -2865,8 +2865,7 @@ async def play_next_track(player):
             print(f'Player error: {error}')
         try:
             coro = play_next_track(player)
-            fut = asyncio.run_coroutine_threadsafe(coro, bot.loop)
-            fut.result()
+            asyncio.run_coroutine_threadsafe(coro, bot.loop)
         except Exception as e:
             print(f"Error in after_playing: {e}")
 

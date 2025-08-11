@@ -2872,6 +2872,8 @@ async def update_control_message(player):
 
 async def play_next_track(player):
     """Odtwarza następny utwór z kolejki"""
+    print(f"🎵 DEBUG: play_next_track called, queue size: {len(player.queue)}")
+    
     if not player.voice_client or not player.voice_client.is_connected():
         error_msg = translation_manager.get_text("music.voice_client_error", None, None)
         print(error_msg)
@@ -2879,6 +2881,7 @@ async def play_next_track(player):
         return
 
     if not player.queue:
+        print("🎵 DEBUG: Queue is empty, stopping playback")
         player.current_track = None
         player.is_playing = False
         await update_control_message(player)
@@ -2886,6 +2889,7 @@ async def play_next_track(player):
         return
 
     track_info = player.queue[0]
+    print(f"🎵 DEBUG: Playing track: {track_info['title']}")
     debug_msg1 = translation_manager.get_text("debug.playing_from_url", None, None, url=track_info['url'])
     debug_msg2 = translation_manager.get_text("debug.webpage_url", None, None, webpage_url=track_info.get('webpage_url', None))
     print(debug_msg1)
@@ -2910,11 +2914,13 @@ async def play_next_track(player):
             playback_error_msg = translation_manager.get_text("music.playback_error", None, None, title=track_info['title'])
             await player.text_channel.send(playback_error_msg)
         
+        print(f"🎵 DEBUG: Removing failed track and trying next, remaining queue: {len(player.queue)-1}")
         player.queue.pop(0)
         await play_next_track(player)
         return
 
     player.queue.pop(0)
+    print(f"🎵 DEBUG: Starting playback, queue now has {len(player.queue)} tracks remaining")
     player.current_track = track_info
     player.current_track['start_time'] = datetime.now()
     player.is_playing = True
@@ -2924,12 +2930,13 @@ async def play_next_track(player):
         player.disconnect_timer.cancel()
 
     def after_playing(error):
+        print(f"🎵 DEBUG: Track finished, error: {error}")
         if error:
             print(f'Player error: {error}')
         try:
+            print(f"🎵 DEBUG: Calling play_next_track from after_playing")
             coro = play_next_track(player)
-            fut = asyncio.run_coroutine_threadsafe(coro, bot.loop)
-            fut.result()
+            asyncio.run_coroutine_threadsafe(coro, bot.loop)
         except Exception as e:
             print(f"Error in after_playing: {e}")
 
