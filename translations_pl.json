@@ -322,6 +322,7 @@
     "spotify_failed": "⚠️ Ostrzeżenie",
     "spotify_failed_text": "Nie udało się znaleźć {count} utworów",
     "spotify_error": "❌ Nie udało się dodać utworów ze Spotify!",
+    "spotify_url_error": "❌ Błąd podczas przetwarzania URL Spotify: {error}",
     "spotify_processing_error": "❌ Błąd podczas przetwarzania Spotify!",
     "track_processing_error": "❌ Nie udało się przetworzyć utworu!",
     "track_processing_failed": "❌ Wystąpił błąd podczas przetwarzania utworu!",
