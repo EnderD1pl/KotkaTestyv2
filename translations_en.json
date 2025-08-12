@@ -322,6 +322,7 @@
     "spotify_failed": "⚠️ Warning",
     "spotify_failed_text": "Failed to find {failed} tracks",
     "spotify_error": "❌ Failed to add Spotify tracks!",
+    "spotify_url_error": "❌ Error processing Spotify URL: {error}",
     "spotify_processing_error": "❌ Error while processing Spotify!",
     "track_processing_error": "❌ Failed to process track!",
     "track_processing_failed": "❌ Error occurred while processing track!",
@@ -336,7 +337,7 @@
     "help_supported_text": "YouTube, SoundCloud, Bandcamp and others supported by yt-dlp",
     "connection_timeout": "❌ Failed to connect to voice channel (timeout).",
     "connection_error": "❌ Error connecting to channel: {error}",
-    "remaining_time": "Remaining: {time}",
+    "remaining_time": "Remaining: {minutes}:{seconds:02d}",
     "and_more": "... and {count} more",
     "player_title": "🎵 Music Player",
     "remaining": "Remaining: {time}",
@@ -353,7 +354,7 @@
     "stop_description": "Stop playback and disconnect bot",
     "query": "Track/playlist link or search term",
     "control_permissions_check": "Check if user can use controls",
-    "added_by": "Added by: {user}",
+    "added_by": "Added by",
     "search_timeout": "Timeout while searching '{query}'",
     "search_error": "Error while searching '{query}': {error}",
     "voice_client_error": "Voice client is not connected or available"
@@ -515,7 +516,7 @@
     "roulette_win": "You won **{amount}$**!",
     "roulette_lose": "You lost **{amount}$**!",
     "blackjack_title": "Blackjack",
-    "rps_win_desc": "{starter}: **{starter_choice}**\\n{target}: **{target_choice}**\\n{winner} wins **{winnings}$**!",
+    "rps_win_desc": "{starter}: **{starter_choice}**\n{target}: **{target_choice}**\n{winner} wins **{winnings}$**!",
     "rps_lose_desc": "You lost! Bot chose **{bot_choice}**.\nYou lose **{amount}$**!",
     "bet_rejected": "Bet rejected. Money returned.",
     "coinflip_lose": "Flip result: **{result}**\nYou lost, lose everything!",
@@ -528,7 +529,7 @@
     "mines_timeout": "⏰ Time's up. Half stake returned: {amount}$",
     "mines_desc": "Reveal fields and collect money! Number of mines: {mines}\nClick field to play! Click already revealed field to collect winnings.",
     "rps_tie_title": "RPS — Tie",
-    "rps_tie_desc": "{starter}: **{starter_choice}**\\n{target}: **{target_choice}**\\nTie, money back.",
+    "rps_tie_desc": "{starter}: **{starter_choice}**\n{target}: **{target_choice}**\nTie, money back.",
     "rps_win_title": "RPS — Victory!",
     "roulette_desc_win": "Landed: {result} (**{color}**)\nYou won **{amount}$**!",
     "roulette_desc_lose": "Landed: {result} (**{color}**)\nYou lost, lose **{amount}$**!",
@@ -558,9 +559,9 @@
     "paper_button": "📄 Paper",
     "scissors_button": "✂️ Scissors",
     "blackjack_bust": "You lost! You went over 21!",
-    "blackjack_win_text": "Your hand: {player_hand} ({player_value})\\nDealer: {dealer_hand} ({dealer_value})\\nYOU WON **{winnings}$**!",
-    "blackjack_tie_text": "Your hand: {player_hand} ({player_value})\\nDealer: {dealer_hand} ({dealer_value})\\nTIE. Money back.",
-    "blackjack_lose_text": "Your hand: {player_hand} ({player_value})\\nDealer: {dealer_hand} ({dealer_value})\\nYOU LOST! You lose {loss}$!",
+    "blackjack_win_text": "Your hand: {player_hand} ({player_value})\nDealer: {dealer_hand} ({dealer_value})\nYOU WON **{winnings}$**!",
+    "blackjack_tie_text": "Your hand: {player_hand} ({player_value})\nDealer: {dealer_hand} ({dealer_value})\nTIE. Money back.",
+    "blackjack_lose_text": "Your hand: {player_hand} ({player_value})\nDealer: {dealer_hand} ({dealer_value})\nYOU LOST! You lose {loss}$!",
     "blackjack_win_winnings": "YOU WON **{winnings}$**!",
     "blackjack_lose_loss": "YOU LOST! You lose {loss}$!",
     "roulette_timeout_log": "Roulette timeout, money returned to {user}",
@@ -714,7 +715,9 @@
     "role_delete_logs_error": "Cannot fetch role deletion logs, guild {guild_id} unknown.",
     "other_error": "Other error: {error}",
     "role_purchase": "{username} ({display_name}) [{user_id}] bought role {role_name} for {price}$ (alias: {alias})",
-    "gambling_roulette_timeout": "Roulette timeout, money returned to {user}"
+    "gambling_roulette_timeout": "Roulette timeout, money returned to {user}",
+    "gambling_roulette_win": "{user} won roulette ({color}) +{amount}$",
+    "gambling_roulette_loss": "{user} lost roulette ({color}) -{amount}$"
   },
   "reaction_roles": {
     "rrcreate": "Add reaction role to message",
@@ -1225,7 +1228,8 @@
     "deletelink": "Delete shortened link",
     "mylinks": "Show your links",
     "tempmail": "Create temporary email",
-    "resetmail": "Reset temporary email"
+    "resetmail": "Reset temporary email",
+    "resetgamestates": "Reset all game states (admin only)"
   },
   "test": {
     "translation_title": "Translation test"
@@ -1315,7 +1319,8 @@
     "title": "Announcement",
     "description": "Send announcement to all changelog channels",
     "message": "Announcement content",
-    "sent": "Announcement sent to {count} servers"
+    "sent": "Announcement sent to {count} servers",
+    "footer": "Announcement by {user}"
   },
   "messages": {
     "new_mail": "New message for {user_id} on {addr}: {count} emails.",
@@ -1436,7 +1441,15 @@
     "hit": "HIT",
     "stand": "STAND",
     "reset_economy": "❗ Reset economy",
-    "cancel": "Cancel"
+    "cancel": "Cancel",
+    "skip": "⏭️ Skip",
+    "pause": "⏸️ Pause",
+    "resume": "▶️ Resume",
+    "stop": "⏹️ Stop",
+    "volume_up": "🔊 Volume Up",
+    "volume_down": "🔉 Volume Down",
+    "shuffle": "🔀 Shuffle",
+    "help": "❓ Help"
   },
   "logs": {
     "mines_played_won": "{user} played mines and won {amount}$ (mines: {mines})",
@@ -1480,22 +1493,34 @@
     "removed": "What was removed (optional)",
     "version_type": "Update type",
     "language": "Language",
-    "scope": "Scope",
+    "scope": "Language scope (Personal/Server)",
     "changelog_channel": "Changelog channel",
-    "ai_channel": "AI channel",
+    "fixed": "What was fixed (optional)",
     "log_channel": "Log channel",
     "welcome_channel": "Welcome channel",
     "counting_channel": "Counting channel",
     "ping_channel": "Ping channel",
+    "konto": "Account type (balance/bank)",
     "econlogs_channel": "Economy logs channel",
-    "work_channel": "Work channel",
+    "amount_deposit": "Amount to deposit",
+    "amount_withdraw": "Amount to withdraw",
+    "income_amount": "Daily income amount",
     "min_amount": "Minimum amount",
     "max_amount": "Maximum amount",
+    "steal_target": "Who to steal from?",
+    "show_bank": "Show bank balance (admin only)",
+    "opponent": "Opponent (optional)",
+    "side": "Side: heads/tails",
+    "mines": "Number of mines (1-20)",
+    "role_to_buy": "Role to buy",
     "price": "Price",
-    "income": "Daily income",
+    "alias": "Alias/shortcut to use",
+    "alias_remove": "Role alias to remove",
+    "alias_buy": "Role alias to buy (use /shop to see list)",
+    "url": "Link to shorten",
+    "custom": "Custom ending (optional)",
     "short": "Short code of your link",
-    "days": "How many days? (can leave empty)",
-    "never": "Never expires (true/false)",
-    "fixed": "What was fixed (optional)"
+    "days": "Number of days to extend",
+    "never": "Never expire (true/false)"
   }
 }

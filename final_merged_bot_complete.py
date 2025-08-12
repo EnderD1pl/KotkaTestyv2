@@ -1,10 +1,3 @@
-# =====================================
-# DISCORD BOT - KOTKA TESTY V2
-# =====================================
-# Wielofunkcyjny bot Discord z systemem tłumaczeń
-# Funkcje: Moderacja, Muzyka, Ekonomia, Gry, AI
-# Język: Polski/Angielski (system automatycznego tłumaczenia)
-
 import discord
 import requests
 import logging
@@ -28,29 +21,22 @@ import spotipy
 from spotipy.oauth2 import SpotifyClientCredentials
 from discord import FFmpegPCMAudio, RawMessageDeleteEvent, RawMessageUpdateEvent, AuditLogAction
 
-# Globalna zmienna - blokada AI (naptime/wakeywake)
 bot_locked = False
 
 load_dotenv()
 
-# =====================================
-# SYSTEM TŁUMACZEŃ WIELOJĘZYCZNYCH
-# =====================================
-# Automatyczne tłumaczenie wszystkich tekstów bota
-# Obsługuje fallback do języka domyślnego przy brakujących kluczach
-# Pliki: translations_pl.json, translations_en.json
-
+# ==================== TRANSLATION SYSTEM ====================
 class TranslationManager:
     def __init__(self):
-        self.translations = {}  # Wszystkie załadowane tłumaczenia
-        self.user_languages = {}  # Preferencje językowe użytkowników
-        self.guild_languages = {}  # Preferencje językowe serwerów  
-        self.default_language = "pl"  # Domyślny język (fallback)
-        self.load_translations()  # Ładuj pliki JSON z tłumaczeniami
-        self.load_language_preferences()  # Ładuj zapisane preferencje
+        self.translations = {}
+        self.user_languages = {}  # Store user language preferences
+        self.guild_languages = {}  # Store guild language preferences
+        self.default_language = "pl"
+        self.load_translations()
+        self.load_language_preferences()
 
     def load_translations(self):
-        """Ładuje pliki tłumaczeń z JSON (translations_pl.json, translations_en.json)"""
+        """Load translation files"""
         try:
             with open("translations_pl.json", "r", encoding="utf-8") as f:
                 self.translations["pl"] = json.load(f)
@@ -125,7 +111,7 @@ class TranslationManager:
         return self.default_language
 
     def get_text(self, key_path, user_id=None, guild_id=None, **kwargs):
-        """Główna funkcja tłumaczenia - pobiera tekst w odpowiednim języku z fallback"""
+        """Get translated text for a user/guild"""
         language = self.get_user_language(user_id, guild_id)
         
         # Debug: print language selection
@@ -160,20 +146,12 @@ class TranslationManager:
         
         return text
 
-# Inicjalizacja managera tłumaczeń (globalny obiekt)
+# Initialize translation manager
 translation_manager = TranslationManager()
 
 def get_command_description(command_name, user_id=None, guild_id=None):
-    """Pomocnicza funkcja - opisy komend zawsze po angielsku (zgodnie z Discord API)"""
-    # Force English for command descriptions by accessing English translations directly
-    keys = f"command_descriptions.{command_name}".split(".")
-    text = translation_manager.translations.get("en", {})
-    for key in keys:
-        if isinstance(text, dict) and key in text:
-            text = text[key]
-        else:
-            return f"[Missing command description: {command_name}]"
-    return text
+    """Helper function to get translated command description"""
+    return translation_manager.get_text(f"command_descriptions.{command_name}", user_id, guild_id)
 
 def get_parameter_description(param_name, user_id=None, guild_id=None):
     """Helper function to get translated parameter description"""
@@ -213,10 +191,10 @@ async def init_sessions_from_backend():
                 "last_checked": None
             }
         # Use default language for system logs
-        success_msg = translation_manager.get_text("tempmail.initialization_success", None, None, count=len(user_sessions))
+        success_msg = translation_manager.get_text("tempmail.initialization_success", count=len(user_sessions))
         logging.info(success_msg)
     except Exception as e:
-        error_msg = translation_manager.get_text("tempmail.initialization_error", None, None, error=str(e))
+        error_msg = translation_manager.get_text("tempmail.initialization_error", error=str(e))
         logging.error(error_msg)
 
 
@@ -252,10 +230,10 @@ class ModuleManager:
             if resp.status_code == 200:
                 self.config = resp.json()
             else:
-                error_msg = translation_manager.get_text("logging.config_load_error", None, None, status=resp.status_code)
+                error_msg = translation_manager.get_text("logging.config_load_error", status=resp.status_code)
                 print(f"[ModuleManager] {error_msg}")
         except Exception as e:
-            error_msg = translation_manager.get_text("logging.panel_connection_error", None, None, error=str(e))
+            error_msg = translation_manager.get_text("logging.panel_connection_error", error=str(e))
             print(f"[ModuleManager] {error_msg}")
 
     def is_module_enabled(self, guild_id, module):
@@ -452,11 +430,8 @@ KEY RULES:
 
 Your style is colloquial, ironic, and brief. You sound like a real teenager talking to friends on Discord.'''
 
-# =====================================
-# KOMENDY ADMINISTRACYJNE & ZARZĄDZANIE BOTEM
-# =====================================
+# === Missing AI admin slash commands and bot management commands from bot.py ===
 
-# /restart - Restart bota (tylko autoryzowani użytkownicy)
 @bot.tree.command(name="restart", description=get_command_description("restart"))
 @app_commands.checks.has_permissions(administrator=True)
 async def restart(interaction: discord.Interaction):
@@ -467,27 +442,25 @@ async def restart(interaction: discord.Interaction):
     msg = translation_manager.get_text("bot_management.restarting", interaction.user.id, interaction.guild_id)
     await interaction.response.send_message(msg, ephemeral=True)
     changelog_channels = load_channel_data("changelog")
-    
+    title_text = translation_manager.get_text("bot_management.restart_in_progress", interaction.user.id, interaction.guild_id)
+    embed = discord.Embed(
+        title=title_text,
+        color=discord.Color.blue(),
+        timestamp=datetime.now(timezone.utc)
+    )
     for guild_id, channel_id in changelog_channels.items():
         guild = bot.get_guild(int(guild_id))
         if guild:
             channel = guild.get_channel(channel_id)
             if channel:
                 try:
-                    title_text = translation_manager.get_text("bot_management.restart_in_progress", None, int(guild_id))
-                    embed = discord.Embed(
-                        title=title_text,
-                        color=discord.Color.blue(),
-                        timestamp=datetime.now(timezone.utc)
-                    )
                     await channel.send(embed=embed)
                 except Exception as e:
-                    error_msg = translation_manager.get_text("tempmail.send_restart_error", None, int(guild_id), guild_id=guild_id, error=str(e))
+                    error_msg = translation_manager.get_text("tempmail.send_restart_error", guild_id=guild_id, error=str(e))
                     print(error_msg)
     await bot.close()
     os.execv(sys.executable, [sys.executable] + sys.argv)
 
-# /emergency - Awaryjne wyłączenie bota (tylko autoryzowani użytkownicy)
 @bot.tree.command(name="emergency", description=get_command_description("emergency"))
 @app_commands.checks.has_permissions(administrator=True)
 async def restart(interaction: discord.Interaction):
@@ -509,7 +482,7 @@ async def restart(interaction: discord.Interaction):
         def __init__(self):
             super().__init__(timeout=60) 
 
-        @button(label=translation_manager.get_text("buttons.yes", interaction.user.id, interaction.guild_id), style=ButtonStyle.danger)
+        @button(label=translation_manager.get_text("buttons.yes", None, None), style=ButtonStyle.danger)
         async def confirm(self, interaction2: Interaction, button: Button):
             if interaction2.user.id != interaction.user.id:
                 cannot_confirm_msg = translation_manager.get_text("bot_management.cannot_confirm", interaction2.user.id, interaction2.guild_id)
@@ -517,26 +490,25 @@ async def restart(interaction: discord.Interaction):
             shutting_down_msg = translation_manager.get_text("bot_management.shutting_down", interaction2.user.id, interaction2.guild_id)
             await interaction2.response.edit_message(content=shutting_down_msg, embed=None, view=None)
             changelog_channels = load_channel_data("changelog")
-            
+            title_offline = translation_manager.get_text("bot_management.bot_offline")
+            embed = discord.Embed(
+                title=title_offline,
+                color=discord.Color.red(),
+                timestamp=datetime.now(timezone.utc)
+            )
             for guild_id, channel_id in changelog_channels.items():
                 guild = bot.get_guild(int(guild_id))
                 if guild:
                     channel = guild.get_channel(channel_id)
                     if channel:
                         try:
-                            title_offline = translation_manager.get_text("bot_management.bot_offline", None, int(guild_id))
-                            embed = discord.Embed(
-                                title=title_offline,
-                                color=discord.Color.red(),
-                                timestamp=datetime.now(timezone.utc)
-                            )
                             await channel.send(embed=embed)
                         except Exception as e:
-                            error_msg = translation_manager.get_text("tempmail.send_shutdown_error", None, int(guild_id), guild_id=guild_id, error=str(e))
+                            error_msg = translation_manager.get_text("tempmail.send_shutdown_error", guild_id=guild_id, error=str(e))
                             print(error_msg)
             await bot.close()
 
-        @button(label=translation_manager.get_text("buttons.no", interaction.user.id, interaction.guild_id), style=ButtonStyle.secondary)
+        @button(label=translation_manager.get_text("buttons.no", None, None), style=ButtonStyle.secondary)
         async def cancel(self, interaction2: Interaction, button: Button):
             if interaction2.user.id != interaction.user.id:
                 cannot_cancel_msg = translation_manager.get_text("bot_management.cannot_cancel", interaction2.user.id, interaction2.guild_id)
@@ -575,7 +547,7 @@ async def faq(interaction: discord.Interaction):
     view = ui.View()
 
     class FAQButtons(ui.View):
-        @ui.button(label=translation_manager.get_text("buttons.yes_send_ai_faq", interaction.user.id, interaction.guild_id), style=ButtonStyle.success)
+        @ui.button(label=translation_manager.get_text("buttons.yes_send_ai_faq", None, None), style=ButtonStyle.success)
         async def yes(self, interaction2: Interaction, _):
             if not interaction.user.guild_permissions.administrator:
                 no_perms = translation_manager.get_text("general.no_permissions_short", interaction2.user.id, interaction2.guild_id)
@@ -637,7 +609,7 @@ async def faq(interaction: discord.Interaction):
             await interaction2.channel.send(embed=full)
             await interaction2.response.defer()
 
-        @ui.button(label=translation_manager.get_text("buttons.no", interaction.user.id, interaction.guild_id), style=ButtonStyle.secondary)
+        @ui.button(label=translation_manager.get_text("buttons.no", None, None), style=ButtonStyle.secondary)
         async def no(self, interaction2: Interaction, _):
             close_msg = translation_manager.get_text("faq.close_faq", interaction2.user.id, interaction2.guild_id)
             await interaction2.response.send_message(close_msg, ephemeral=True)
@@ -662,12 +634,9 @@ async def test_lang(interaction: discord.Interaction):
     embed = discord.Embed(title=test_title, color=discord.Color.blue())
     current_lang_text = translation_manager.get_text("general.current_language", user_id, guild_id)
     embed.add_field(name=current_lang_text, value=current_lang, inline=False)
-    success_text = translation_manager.get_text("general.success", interaction.user.id, interaction.guild_id)
-    embed.add_field(name=success_text, value=test_text, inline=False)
-    help_title_label = translation_manager.get_text("help.title", interaction.user.id, interaction.guild_id)
-    embed.add_field(name=help_title_label, value=help_title, inline=False)
-    faq_title_label = translation_manager.get_text("faq.title", interaction.user.id, interaction.guild_id)
-    embed.add_field(name=faq_title_label, value=faq_title, inline=False)
+    embed.add_field(name="general.success", value=test_text, inline=False)
+    embed.add_field(name="help.title", value=help_title, inline=False)
+    embed.add_field(name="faq.title", value=faq_title, inline=False)
     
     await interaction.response.send_message(embed=embed, ephemeral=True)
 
@@ -718,11 +687,10 @@ async def refreshusers(interaction: discord.Interaction):
     await interaction.response.send_message(msg, ephemeral=True)
     await log_action(interaction.guild, "RefreshAIUsers", interaction.user, executor=interaction.user)
 
-# /language - Zmiana języka bota (personalny/dla serwera)
 @bot.tree.command(name="language", description=get_command_description("language"))
 @app_commands.describe(
-    language=get_parameter_description("language"),
-    scope=get_parameter_description("scope")
+    language="Choose language (Polish/English)",
+    scope="Language change scope (Personal/Server - admin only)"
 )
 @app_commands.choices(language=[
     app_commands.Choice(name=translation_manager.get_text("language.polish_choice", None, None), value="pl"),
@@ -860,75 +828,27 @@ class YTDLSource(discord.PCMVolumeTransformer):
     @classmethod
     async def from_url(cls, url, *, loop=None, stream=True, volume=0.5):
         loop = loop or asyncio.get_event_loop()
-        try:
-            print(f"🎵 DEBUG: Extracting info from URL: {url}")
-            data = await loop.run_in_executor(None, lambda: ytdl.extract_info(url, download=not stream))
-            
-            if not data:
-                print(f"❌ No data extracted from URL: {url}")
-                return []
-                
-            # Check if it's a playlist
-            if 'entries' in data:
-                entries = [entry for entry in data['entries'] if entry is not None]
-                print(f"🎵 DEBUG: Found playlist with {len(entries)} entries")
-                
-                if len(entries) == 0:
-                    print(f"❌ Playlist is empty or all entries failed")
-                    return []
-                    
-                sources = []
-                for i, entry in enumerate(entries):
-                    print(f"🎵 DEBUG: Processing playlist entry {i+1}/{len(entries)}: {entry.get('title', 'Unknown')}")
-                    source = cls._create_source(entry, stream, volume)
-                    if source:
-                        sources.append(source)
-                    else:
-                        print(f"⚠️ Failed to create source for entry {i+1}")
-                        
-                print(f"🎵 DEBUG: Successfully created {len(sources)} sources from playlist")
-                return sources
-            else:
-                print(f"🎵 DEBUG: Single video: {data.get('title', 'Unknown')}")
-                source = cls._create_source(data, stream, volume)
-                return [source] if source is not None else []
-                
-        except Exception as e:
-            print(f"❌ Error in YTDLSource.from_url: {e}")
-            print(f"❌ URL that failed: {url}")
-            return []
+        data = await loop.run_in_executor(None, lambda: ytdl.extract_info(url, download=not stream))
+
+        if 'entries' in data:
+            sources = [cls._create_source(entry, stream, volume) for entry in data['entries'] if entry]
+            return [s for s in sources if s is not None]
+        else:
+            source = cls._create_source(data, stream, volume)
+            return [source] if source is not None else []
 
     @classmethod
     def _create_source(cls, data, stream, volume):
         try:
-            if not data or not data.get('url'):
-                print(f"⚠️ Invalid data or missing URL: {data}")
-                return None
-                
-            title = data.get('title', 'Unknown')
-            duration = data.get('duration', 0)
-            
-            # Skip very long videos (over 3 hours = 10800 seconds)
-            if duration and duration > 10800:
-                print(f"⚠️ Skipping very long video: {title} ({duration}s)")
-                return None
-                
             filename = data['url'] if stream else ytdl.prepare_filename(data)
-            print(f"🎵 DEBUG: Creating FFmpeg source for: {title}")
-            
             ffmpeg = discord.FFmpegPCMAudio(
                 filename,
                 executable=FFMPEG_PATH,
                 **FFMPEG_OPTIONS
             )
-            
-            source = cls(ffmpeg, data=data, volume=volume)
-            print(f"✅ Successfully created source for: {title}")
-            return source
-            
+            return cls(ffmpeg, data=data, volume=volume)
         except Exception as e:
-            title = data.get('title', 'Unknown') if data else 'Unknown'
-            print(f"❌ Error creating audio source for '{title}': {e}")
+            print(f"Error creating audio source: {e}")
             return None
 
 def get_music_player(guild_id):
@@ -1316,11 +1236,6 @@ async def save_guilds_periodically(bot):
             json.dump([{"id": str(g.id), "name": g.name} for g in bot.guilds], f, ensure_ascii=False)
         await asyncio.sleep(30)
 
-# =====================================
-# EVENT HANDLERS BOTA
-# =====================================
-
-# Event - Każda interakcja (sprawdza globalną blokadę AI)
 @bot.event
 async def on_interaction(interaction: discord.Interaction):
     if bot_locked:
@@ -1332,12 +1247,11 @@ async def on_interaction(interaction: discord.Interaction):
         return
 
 
-# Event - Bot gotowy do pracy (startup, sync komend, powiadomienia)
 @bot.event
 async def on_ready():
     global bot_locked
     # Using default language for startup logs since no user context
-    logged_msg = translation_manager.get_text("logging.logged_as", None, None, name=bot.user.name, id=bot.user.id)
+    logged_msg = translation_manager.get_text("logging.logged_as", name=bot.user.name, id=bot.user.id)
     print(logged_msg)
     expire_warns.start()
     cleanup_message_logs.start()
@@ -1354,7 +1268,7 @@ async def on_ready():
             message_store[guild.id] = {}
     try:
         synced = await bot.tree.sync()
-        sync_msg = translation_manager.get_text("logging.synced_commands", None, None, count=len(synced))
+        sync_msg = translation_manager.get_text("logging.synced_commands", count=len(synced))
         print(sync_msg)
     except Exception:
         pass
@@ -1364,6 +1278,12 @@ async def on_ready():
     await init_sessions_from_backend()
 
     changelog_channels = load_channel_data("changelog")
+    title_text = translation_manager.get_text("bot_management.bot_online")
+    embed = discord.Embed(
+        title=title_text,
+        color=discord.Color.green(),
+        timestamp=datetime.now(timezone.utc)
+    )
 
     for guild_id, channel_id in changelog_channels.items():
         guild = bot.get_guild(int(guild_id))
@@ -1371,15 +1291,9 @@ async def on_ready():
             channel = guild.get_channel(channel_id)
             if channel:
                 try:
-                    title_text = translation_manager.get_text("bot_management.bot_online", None, int(guild_id))
-                    embed = discord.Embed(
-                        title=title_text,
-                        color=discord.Color.green(),
-                        timestamp=datetime.now(timezone.utc)
-                    )
                     await channel.send(embed=embed)
                 except Exception as e:
-                    error_msg = translation_manager.get_text("tempmail.send_startup_error", None, int(guild_id), guild_id=guild_id, error=str(e))
+                    error_msg = translation_manager.get_text("tempmail.send_startup_error", guild_id=guild_id, error=str(e))
                     print(error_msg)
 
     bot.loop.create_task(save_guilds_periodically(bot))
@@ -1717,10 +1631,9 @@ async def setaichannel(interaction: discord.Interaction, channel: discord.TextCh
     print(saved_msg)
     await log_action(interaction.guild, "SetAIChannel", interaction.user, executor=interaction.user)
 
-# /setchangelogchannel - Ustawia kanał changelog na serwerze (admin)
 @app_commands.guild_only()
 @bot.tree.command(name="setchangelogchannel", description=get_command_description("setchangelogchannel"))
-@app_commands.describe(channel=get_parameter_description("changelog_channel"))
+@app_commands.describe(channel="Changelog channel")
 async def setchangelogchannel(ctx, channel: discord.TextChannel):
     if not ctx.user.guild_permissions.administrator:
         no_perms_msg = translation_manager.get_text("general.no_permissions_short", ctx.user.id, ctx.guild.id)
@@ -1736,9 +1649,9 @@ async def setchangelogchannel(ctx, channel: discord.TextChannel):
     await log_action(ctx.guild,"SetChangelogChannel",ctx.user, executor=ctx.user)
     guild = bot.get_guild(int(ctx.guild.id))
     channel = guild.get_channel(channel.id)
-    title_welcome = translation_manager.get_text("welcome.title", ctx.user.id, ctx.guild.id)
-    description_changelog = translation_manager.get_text("welcome.changelog_set", ctx.user.id, ctx.guild.id)
-    footer_welcome = translation_manager.get_text("welcome.footer", ctx.user.id, ctx.guild.id)
+    title_welcome = translation_manager.get_text("welcome.title")
+    description_changelog = translation_manager.get_text("welcome.changelog_set")
+    footer_welcome = translation_manager.get_text("welcome.footer")
     
     embed = discord.Embed(
         title=title_welcome,
@@ -1749,7 +1662,6 @@ async def setchangelogchannel(ctx, channel: discord.TextChannel):
     await channel.send(embed=embed)
     
 
-# /naptime - Blokuje dostęp do AI na wszystkich serwerach i DM (globalne wyłączenie)
 @bot.tree.command(name="naptime", description=get_command_description("naptime"))
 async def naptime(interaction: discord.Interaction):
     if interaction.user.id not in AUTHORIZED_USERS:
@@ -1760,10 +1672,6 @@ async def naptime(interaction: discord.Interaction):
     blocking_msg = translation_manager.get_text("bot_management.blocking_channels", interaction.user.id, interaction.guild_id)
     await interaction.response.send_message(blocking_msg, ephemeral=True)
 
-    # Block AI globally (including DMs)
-    global bot_locked
-    bot_locked = True
-
     # Lock AI channels
     ai_config = load_ai_channel_config()
     for guild_id, channel_id in ai_config.items():
@@ -1772,7 +1680,7 @@ async def naptime(interaction: discord.Interaction):
             channel = guild.get_channel(channel_id)
             if channel:
                 try:
-                    maintenance_msg = translation_manager.get_text("ai.maintenance_block", None, int(guild_id))
+                    maintenance_msg = translation_manager.get_text("ai.maintenance_block")
                     await channel.send(maintenance_msg)
                     await channel.set_permissions(guild.default_role, send_messages=False)  
                 except Exception as e:
@@ -1780,6 +1688,12 @@ async def naptime(interaction: discord.Interaction):
                     print(error_msg)
         bot_locked_per_guild[int(guild_id)] = True
     changelog_channels = load_channel_data("changelog")
+    maintenance_title = translation_manager.get_text("bot_management.maintenance_title")
+    embed = discord.Embed(
+        title=maintenance_title,
+        color=discord.Color.yellow(),
+        timestamp=datetime.now(timezone.utc)
+    )
 
     for guild_id, channel_id in changelog_channels.items():
         guild = bot.get_guild(int(guild_id))
@@ -1787,19 +1701,12 @@ async def naptime(interaction: discord.Interaction):
             channel = guild.get_channel(channel_id)
             if channel:
                 try:
-                    maintenance_title = translation_manager.get_text("bot_management.maintenance_title", None, int(guild_id))
-                    embed = discord.Embed(
-                        title=maintenance_title,
-                        color=discord.Color.yellow(),
-                        timestamp=datetime.now(timezone.utc)
-                    )
                     await channel.send(embed=embed)
                 except Exception as e:
                     print(f"Failed to send update info to server {guild_id}: {e}")
 
     await bot.change_presence(status=discord.Status.invisible)
 
-# /wakeywakey - Odblokowuje dostęp do AI na wszystkich serwerach i DM (globalne włączenie)
 @bot.tree.command(name="wakeywakey", description=get_command_description("wakeywakey"))
 async def wakeywakey(interaction: discord.Interaction):
     if interaction.user.id not in AUTHORIZED_USERS:
@@ -1810,10 +1717,6 @@ async def wakeywakey(interaction: discord.Interaction):
     unblocking_msg = translation_manager.get_text("bot_management.unblocking_channels", interaction.user.id, interaction.guild_id)
     await interaction.response.send_message(unblocking_msg, ephemeral=True)
 
-    # Unblock AI globally (including DMs)
-    global bot_locked
-    bot_locked = False
-
     # Unlock AI channels
     ai_config = load_ai_channel_config()
     for guild_id, channel_id in ai_config.items():
@@ -1823,25 +1726,25 @@ async def wakeywakey(interaction: discord.Interaction):
             if channel:
                 try:
                     await channel.set_permissions(guild.default_role, send_messages=None)
-                    maintenance_complete_msg = translation_manager.get_text("ai.maintenance_unblock", None, int(guild_id))
+                    maintenance_complete_msg = translation_manager.get_text("ai.maintenance_unblock")
                     await channel.send(maintenance_complete_msg)
                 except Exception as e:
                     error_msg = translation_manager.get_text("tempmail.unblock_channel_error", guild_id=guild_id, error=str(e))
                     print(error_msg)
         bot_locked_per_guild[int(guild_id)] = False
     changelog_channels = load_channel_data("changelog")
+    maintenance_completed_title = translation_manager.get_text("bot_management.maintenance_completed")
+    embed = discord.Embed(
+        title=maintenance_completed_title,
+        color=discord.Color.dark_green(),
+        timestamp=datetime.now(timezone.utc)
+    )
     for guild_id, channel_id in changelog_channels.items():
         guild = bot.get_guild(int(guild_id))
         if guild:
             channel = guild.get_channel(channel_id)
             if channel:
                 try:
-                    maintenance_completed_title = translation_manager.get_text("bot_management.maintenance_completed", None, int(guild_id))
-                    embed = discord.Embed(
-                        title=maintenance_completed_title,
-                        color=discord.Color.dark_green(),
-                        timestamp=datetime.now(timezone.utc)
-                    )
                     await channel.send(embed=embed)
                 except Exception as e:
                     print(f"Failed to send update info to server {guild_id}: {e}")
@@ -1909,13 +1812,13 @@ async def changelog_cmd(interaction: discord.Interaction, version_type: str, add
     )
 
     if added:
-        added_text = translation_manager.get_text("changelog.added_text", interaction.user.id, interaction.guild_id)
+        added_text = translation_manager.get_text("changelog.added", None, guild.id) if translation_manager.get_text("changelog.added", None, guild.id) != "[Missing: changelog.added]" else "➕ Dodano"
         embed.add_field(name=added_text, value=added, inline=False)
     if removed:
-        removed_text = translation_manager.get_text("changelog.removed_text", interaction.user.id, interaction.guild_id)
+        removed_text = translation_manager.get_text("changelog.removed_text", None, guild.id)
         embed.add_field(name=removed_text, value=removed, inline=False)
     if fixed:
-        fixed_text = translation_manager.get_text("changelog.fixed_text", interaction.user.id, interaction.guild_id)
+        fixed_text = translation_manager.get_text("changelog.fixed", None, guild.id) if translation_manager.get_text("changelog.fixed", None, guild.id) != "[Missing: changelog.fixed]" else "🔧 Naprawiono"
         embed.add_field(name=fixed_text, value=fixed, inline=False)
 
     embed.set_footer(text=f"Changelog by {interaction.user.display_name}")
@@ -1943,7 +1846,7 @@ async def changelog_cmd(interaction: discord.Interaction, version_type: str, add
 
 
 @bot.tree.command(name="announce", description=get_command_description("announce"))
-@app_commands.describe(message=get_parameter_description("message"))
+@app_commands.describe(message="Announcement content")
 async def announce_cmd(interaction: discord.Interaction, message: str):
     if interaction.user.id not in AUTHORIZED_USERS:
         no_perms_text = translation_manager.get_text("general.no_command_permissions", interaction.user.id, interaction.guild_id)
@@ -1985,7 +1888,7 @@ async def announce_cmd(interaction: discord.Interaction, message: str):
 
 @app_commands.guild_only()
 @bot.tree.command(name="setperms", description=get_command_description("setperms"))
-@app_commands.describe(role=get_parameter_description("role"), permissions=get_parameter_description("permissions"))
+@app_commands.describe(role="Role", permissions="warn,ban,kick,timeout")
 async def setperms(ctx, role: discord.Role, permissions: str):
     if not await check_changelog_and_module(ctx, "moderation"):
         return
@@ -2025,7 +1928,7 @@ async def setperms(ctx, role: discord.Role, permissions: str):
 
 @app_commands.guild_only()
 @bot.tree.command(name="revokeperms", description=get_command_description("revokeperms"))
-@app_commands.describe(role=get_parameter_description("role"), permissions=get_parameter_description("permissions"))
+@app_commands.describe(role="Role", permissions="warn,ban,kick,timeout")
 async def revokeperms(ctx, role: discord.Role, permissions: str):
     if not await check_changelog_and_module(ctx, "moderation"):
         return
@@ -2100,14 +2003,9 @@ async def permslist(ctx):
 
     await ctx.followup.send(embed=embed, ephemeral=True)
 
-# =====================================
-# KOMENDY MODERACYJNE
-# =====================================
-
-# /warn - Ostrzeż użytkownika (moduł moderacji)
 @app_commands.guild_only()
 @bot.tree.command(name="warn", description=get_command_description("warn"))
-@app_commands.describe(user=get_parameter_description("user"), reason=get_parameter_description("reason"))
+@app_commands.describe(user="User", reason="Reason")
 async def warn(ctx, user: discord.Member, reason: str):
     if not await check_changelog_and_module(ctx, "moderation"):
         return
@@ -2161,7 +2059,7 @@ async def warn(ctx, user: discord.Member, reason: str):
 
 @app_commands.guild_only()
 @bot.tree.command(name="warns", description=get_command_description("warns"))
-@app_commands.describe(user=get_parameter_description("user_optional"))
+@app_commands.describe(user="User (optional)")
 async def warns(ctx, user: discord.Member = None):
     if not await check_changelog_and_module(ctx, "moderation"):
         return
@@ -2191,7 +2089,7 @@ async def warns(ctx, user: discord.Member = None):
 
 @app_commands.guild_only()
 @bot.tree.command(name="clearwarns", description=get_command_description("clearwarns"))
-@app_commands.describe(user=get_parameter_description("user"))
+@app_commands.describe(user="User")
 async def clearwarns(ctx, user: discord.Member):
     if not await check_changelog_and_module(ctx, "moderation"):
         return
@@ -2210,10 +2108,9 @@ async def clearwarns(ctx, user: discord.Member):
         no_warnings_text = translation_manager.get_text("general.no_warnings_to_remove", ctx.user.id, ctx.guild.id)
         await ctx.followup.send(embed=discord.Embed(description=no_warnings_text, color=discord.Color.blue()))
 
-# /ban - Zbanuj użytkownika (opcjonalnie czasowo)
 @app_commands.guild_only()
 @bot.tree.command(name="ban", description=get_command_description("ban"))
-@app_commands.describe(user=get_parameter_description("user"), reason=get_parameter_description("reason"), time=get_parameter_description("time"))
+@app_commands.describe(user="User", reason="Reason", time="e.g. '1d','2h'")
 async def ban(ctx, user: discord.Member, reason: str = None, time: str = None):
     if not await check_changelog_and_module(ctx, "moderation"):
         return
@@ -2240,12 +2137,8 @@ async def ban(ctx, user: discord.Member, reason: str = None, time: str = None):
             return await ctx.followup.send(embed=discord.Embed(description=invalid_format_text, color=discord.Color.red()))
     await user.ban(reason=reason or "")
     text = translation_manager.get_text("moderation.user_banned_text", ctx.user.id, ctx.guild.id, user=user.mention)
-    if reason: 
-        reason_text = translation_manager.get_text("general.reason", ctx.user.id, ctx.guild.id)
-        text += f" {reason_text}: {reason}"
-    if temp: 
-        time_text = translation_manager.get_text("general.duration", ctx.user.id, ctx.guild.id)
-        text += f"\n{time_text}: {time}"
+    if reason: text+=f" za: {reason}"
+    if temp: text+=f"\nCzas: {time}"
     embed=discord.Embed(description=text,color=discord.Color.orange())
     await ctx.followup.send(embed=embed)
     await log_action(ctx.guild,"Ban",user,reason, time if temp else None, executor=ctx.user)
@@ -2257,7 +2150,7 @@ async def ban(ctx, user: discord.Member, reason: str = None, time: str = None):
 
 @app_commands.guild_only()
 @bot.tree.command(name="kick", description=get_command_description("kick"))
-@app_commands.describe(user=get_parameter_description("user"), reason=get_parameter_description("reason"))
+@app_commands.describe(user="User", reason="Reason")
 async def kick(ctx, user: discord.Member, reason: str = None):
     if not await check_changelog_and_module(ctx, "moderation"):
         return
@@ -2267,16 +2160,14 @@ async def kick(ctx, user: discord.Member, reason: str = None):
     await ctx.response.defer()
     await user.kick(reason=reason or "")
     text = translation_manager.get_text("moderation.user_kicked_text", ctx.user.id, ctx.guild.id, user=user.mention)
-    if reason: 
-        reason_text = translation_manager.get_text("general.reason", ctx.user.id, ctx.guild.id)
-        text += f" {reason_text}: {reason}"
+    if reason: text+=f" za: {reason}"
     embed=discord.Embed(description=text,color=discord.Color.orange())
     await ctx.followup.send(embed=embed)
     await log_action(ctx.guild,"Kick",user,reason, executor=ctx.user)
 
 @app_commands.guild_only()
 @bot.tree.command(name="timeout", description=get_command_description("timeout"))
-@app_commands.describe(user=get_parameter_description("user"), time=get_parameter_description("time_long"), reason=get_parameter_description("reason"))
+@app_commands.describe(user="User", time="e.g. '1d','2h','10m'", reason="Reason")
 async def timeout(ctx, user: discord.Member, time: str, reason: str = None):
     if not await check_changelog_and_module(ctx, "moderation"):
         return
@@ -2305,16 +2196,14 @@ async def timeout(ctx, user: discord.Member, time: str, reason: str = None):
         return await ctx.followup.send(embed=discord.Embed(description=invalid_format_text, color=discord.Color.red()))
     await user.timeout(dur,reason=reason or "")
     text = translation_manager.get_text("moderation.user_muted_text", ctx.user.id, ctx.guild.id, user=user.mention, time=time)
-    if reason: 
-        reason_text = translation_manager.get_text("general.reason", ctx.user.id, ctx.guild.id)
-        text += f" {reason_text}: {reason}"
+    if reason: text+=f" za: {reason}"
     embed=discord.Embed(description=text,color=discord.Color.orange())
     await ctx.followup.send(embed=embed)
     await log_action(ctx.guild,"Timeout",user,reason,time, executor=ctx.user)
 
 @app_commands.guild_only()
 @bot.tree.command(name="unban", description=get_command_description("unban"))
-@app_commands.describe(user_id=get_parameter_description("user_id"))
+@app_commands.describe(user_id="User ID")
 async def unban(ctx, user_id: str):
     if not await check_changelog_and_module(ctx, "moderation"):
         return
@@ -2336,7 +2225,7 @@ async def unban(ctx, user_id: str):
 
 @app_commands.guild_only()
 @bot.tree.command(name="setlogchannel", description=get_command_description("setlogchannel"))
-@app_commands.describe(channel=get_parameter_description("log_channel"))
+@app_commands.describe(channel="Log channel")
 async def setlogchannel(ctx, channel: discord.TextChannel):
     if not await check_changelog_and_module(ctx, "moderation"):
         return
@@ -2354,7 +2243,7 @@ async def setlogchannel(ctx, channel: discord.TextChannel):
 
 @app_commands.guild_only()
 @bot.tree.command(name="setwelcomechannel", description=get_command_description("setwelcomechannel"))
-@app_commands.describe(channel=get_parameter_description("welcome_channel"))
+@app_commands.describe(channel="Welcome channel")
 async def setwelcomechannel(ctx, channel: discord.TextChannel):
     if not await check_changelog_and_module(ctx, "moderation"):
         return
@@ -2372,7 +2261,7 @@ async def setwelcomechannel(ctx, channel: discord.TextChannel):
 
 @app_commands.guild_only()
 @bot.tree.command(name="setcounterchannel", description=get_command_description("setcounterchannel"))
-@app_commands.describe(channel=get_parameter_description("counting_channel"))
+@app_commands.describe(channel="Counting channel")
 async def setcounterchannel(ctx, channel: discord.TextChannel):
     if not await check_changelog_and_module(ctx, "moderation"):
         return
@@ -2393,7 +2282,7 @@ async def setcounterchannel(ctx, channel: discord.TextChannel):
 
 @app_commands.guild_only()
 @bot.tree.command(name="setpingchannel", description=get_command_description("setpingchannel"))
-@app_commands.describe(channel=get_parameter_description("ping_channel"))
+@app_commands.describe(channel="Ping channel")
 async def setpingchannel(ctx, channel: discord.TextChannel):
     if not await check_changelog_and_module(ctx, "moderation"):
         return
@@ -2441,7 +2330,7 @@ async def unlock(ctx):
 
 @app_commands.guild_only()
 @bot.tree.command(name="purge", description=get_command_description("purge"))
-@app_commands.describe(amount=get_parameter_description("amount_1_100"))
+@app_commands.describe(amount="Amount (1-100)")
 async def purge(ctx, amount: int):
     if not await check_changelog_and_module(ctx, "moderation"):
         return
@@ -2710,7 +2599,7 @@ async def help(ctx):
 
 async def create_control_embed(player):
     """Tworzy embed z kontrolkami muzycznymi"""
-    player_title = translation_manager.get_text("music.player_title", None, player.guild_id)
+    player_title = translation_manager.get_text("music.player_title", None, None)
     embed = discord.Embed(title=player_title, color=discord.Color.blue())
     
     if player.current_track:
@@ -2878,7 +2767,7 @@ class MusicControlView(discord.ui.View):
     
     @discord.ui.button(label="❓", style=discord.ButtonStyle.secondary, row=1)
     async def help_button(self, interaction: discord.Interaction, button: discord.ui.Button):
-        help_title = translation_manager.get_text("music.help_title", interaction.user.id, interaction.guild_id)
+        help_title = translation_manager.get_text("music.help_title", None, None)
         embed = discord.Embed(title=help_title, color=discord.Color.blue())
         help_commands_name = translation_manager.get_text("music.help_commands", interaction.user.id, interaction.guild_id)
         help_commands_text = translation_manager.get_text("music.help_commands_text", interaction.user.id, interaction.guild_id)
@@ -2887,8 +2776,8 @@ class MusicControlView(discord.ui.View):
             value=help_commands_text,
             inline=False
         )
-        help_buttons_name = translation_manager.get_text("music.help_controls", interaction.user.id, interaction.guild_id)
-        help_buttons_text = translation_manager.get_text("music.help_controls_text", interaction.user.id, interaction.guild_id)
+        help_buttons_name = translation_manager.get_text("music.help_buttons", interaction.user.id, interaction.guild_id)
+        help_buttons_text = translation_manager.get_text("music.help_buttons_text", interaction.user.id, interaction.guild_id)
         embed.add_field(
             name=help_buttons_name,
             value=help_buttons_text,
@@ -2901,8 +2790,8 @@ class MusicControlView(discord.ui.View):
             value=help_permissions_text,
             inline=False
         )
-        help_services_name = translation_manager.get_text("music.help_supported", interaction.user.id, interaction.guild_id)
-        help_services_text = translation_manager.get_text("music.help_supported_text", interaction.user.id, interaction.guild_id)
+        help_services_name = translation_manager.get_text("music.help_services", interaction.user.id, interaction.guild_id)
+        help_services_text = translation_manager.get_text("music.help_services_text", interaction.user.id, interaction.guild_id)
         embed.add_field(
             name=help_services_name,
             value=help_services_text,
@@ -2929,8 +2818,6 @@ async def update_control_message(player):
 
 async def play_next_track(player):
     """Odtwarza następny utwór z kolejki"""
-    print(f"🎵 DEBUG: play_next_track called, queue size: {len(player.queue)}")
-    
     if not player.voice_client or not player.voice_client.is_connected():
         error_msg = translation_manager.get_text("music.voice_client_error", None, None)
         print(error_msg)
@@ -2938,7 +2825,6 @@ async def play_next_track(player):
         return
 
     if not player.queue:
-        print("🎵 DEBUG: Queue is empty, stopping playback")
         player.current_track = None
         player.is_playing = False
         await update_control_message(player)
@@ -2946,7 +2832,6 @@ async def play_next_track(player):
         return
 
     track_info = player.queue[0]
-    print(f"🎵 DEBUG: Playing track: {track_info['title']}")
     debug_msg1 = translation_manager.get_text("debug.playing_from_url", None, None, url=track_info['url'])
     debug_msg2 = translation_manager.get_text("debug.webpage_url", None, None, webpage_url=track_info.get('webpage_url', None))
     print(debug_msg1)
@@ -2971,13 +2856,11 @@ async def play_next_track(player):
             playback_error_msg = translation_manager.get_text("music.playback_error", None, None, title=track_info['title'])
             await player.text_channel.send(playback_error_msg)
         
-        print(f"🎵 DEBUG: Removing failed track and trying next, remaining queue: {len(player.queue)-1}")
         player.queue.pop(0)
         await play_next_track(player)
         return
 
     player.queue.pop(0)
-    print(f"🎵 DEBUG: Starting playback, queue now has {len(player.queue)} tracks remaining")
     player.current_track = track_info
     player.current_track['start_time'] = datetime.now()
     player.is_playing = True
@@ -2987,18 +2870,16 @@ async def play_next_track(player):
         player.disconnect_timer.cancel()
 
     def after_playing(error):
-        print(f"🎵 DEBUG: Track finished, error: {error}")
         if error:
             print(f'Player error: {error}')
         try:
-            print(f"🎵 DEBUG: Calling play_next_track from after_playing")
             coro = play_next_track(player)
             asyncio.run_coroutine_threadsafe(coro, bot.loop)
         except Exception as e:
             print(f"Error in after_playing: {e}")
 
     player.voice_client.play(source, after=after_playing)
-    playback_started_msg = translation_manager.get_text("messages.playback_started", None, None, title=track_info['title'])
+    playback_started_msg = translation_manager.get_text("music.playback_started", None, None, title=track_info['title'])
     print(playback_started_msg)
     
     await update_control_message(player)
@@ -3174,16 +3055,9 @@ def is_youtube_url(url):
     """Sprawdza czy URL to YouTube"""
     return any(domain in url for domain in ['youtube.com', 'youtu.be', 'music.youtube.com'])
 
-# =====================================
-# KOMENDY MUZYCZNE 
-# =====================================
-# System odtwarzania muzyki z YouTube i Spotify
-# Obsługuje kolejki, pomijanie, zatrzymywanie
-
-# /play - Odtwórz muzykę z URL lub wyszukiwania (YouTube/Spotify)
 @app_commands.guild_only()
 @bot.tree.command(name="play", description=get_command_description("play"))
-@app_commands.describe(query=get_parameter_description("query"))
+@app_commands.describe(query="Link to track/playlist or name to search")
 async def play_music(interaction: discord.Interaction, query: str):
     if not await check_changelog_and_module(interaction, "music"):
         return
@@ -3256,9 +3130,7 @@ async def play_music(interaction: discord.Interaction, query: str):
         valid_sources = [s for s in sources if s is not None]
         if not valid_sources:
             track_processing_error_text = translation_manager.get_text("music.track_processing_error", interaction.user.id, interaction.guild_id)
-            # Add information about limits
-            limits_text = "\n\n📋 **Limits:**\n• Playlists: max 50 tracks\n• Video length: max 3 hours\n• Some private/restricted videos may fail"
-            return await interaction.followup.send(track_processing_error_text + limits_text)
+            return await interaction.followup.send(track_processing_error_text)
 
         added_count = 0
         for source in valid_sources:
@@ -3308,7 +3180,6 @@ async def play_music(interaction: discord.Interaction, query: str):
     
     await interaction.followup.send(embed=embed)
 
-# /queue - Pokaż aktualną kolejkę odtwarzania
 @app_commands.guild_only()
 @bot.tree.command(name="queue", description=get_command_description("queue"))
 async def show_queue(interaction: discord.Interaction):
@@ -3366,7 +3237,6 @@ async def show_queue(interaction: discord.Interaction):
     
     await interaction.followup.send(embed=embed, ephemeral=True)
 
-# /skip - Pomiń aktualny utwór i przejdź do następnego w kolejce
 @app_commands.guild_only()
 @bot.tree.command(name="skip", description=get_command_description("skip"))
 async def skip_track(interaction: discord.Interaction):
@@ -3391,7 +3261,6 @@ async def skip_track(interaction: discord.Interaction):
         nothing_playing_text = translation_manager.get_text("music.nothing_playing", interaction.user.id, interaction.guild_id)
         await interaction.response.send_message(nothing_playing_text, ephemeral=True)
 
-# /stop - Zatrzymaj odtwarzanie i rozłącz bota z kanału głosowego
 @app_commands.guild_only()
 @bot.tree.command(name="stop", description=get_command_description("stop"))
 async def stop_command(interaction: discord.Interaction):
@@ -3416,7 +3285,7 @@ async def stop_command(interaction: discord.Interaction):
 
 @app_commands.guild_only()
 @bot.tree.command(name="seteconlogs", description=get_command_description("seteconlogs"))
-@app_commands.describe(channel=get_parameter_description("econlogs_channel"))
+@app_commands.describe(channel="Text channel for economy logs")
 async def set_econlogs(inter: discord.Interaction, channel: discord.TextChannel):
     if not await check_changelog_and_module(inter, "economy"):
         return
@@ -3435,13 +3304,6 @@ async def set_econlogs(inter: discord.Interaction, channel: discord.TextChannel)
     econlogs_set_text = translation_manager.get_text("economy.econlogs_set", inter.user.id, inter.guild.id, channel=channel.mention)
     await inter.response.send_message(embed=eco_success(econlogs_set_text), ephemeral=True)
 
-# =====================================
-# KOMENDY EKONOMICZNE
-# =====================================
-# System ekonomiczny z portfelem, bankiem, sklepem
-# Obsługuje transfery, daily income, prace
-
-# /balance - Sprawdź swój stan konta (portfel + bank)
 @app_commands.guild_only()
 @bot.tree.command(name="balance", description=get_command_description("balance"))
 async def balance_cmd(inter: discord.Interaction):
@@ -3459,7 +3321,7 @@ async def balance_cmd(inter: discord.Interaction):
 
 @app_commands.guild_only()
 @bot.tree.command(name="deposit", description=get_command_description("deposit"))
-@app_commands.describe(amount=get_parameter_description("amount_deposit"))
+@app_commands.describe(amount="Amount to deposit")
 async def deposit_cmd(inter: discord.Interaction, amount: int):
     if not await check_changelog_and_module(inter, "economy"):
         return
@@ -3480,7 +3342,7 @@ async def deposit_cmd(inter: discord.Interaction, amount: int):
 
 @app_commands.guild_only()
 @bot.tree.command(name="withdraw", description=get_command_description("withdraw"))
-@app_commands.describe(amount=get_parameter_description("amount_withdraw"))
+@app_commands.describe(amount="Amount to withdraw")
 async def withdraw_cmd(inter: discord.Interaction, amount: int):
     if not await check_changelog_and_module(inter, "economy"):
         return
@@ -3500,7 +3362,7 @@ async def withdraw_cmd(inter: discord.Interaction, amount: int):
 
 @app_commands.guild_only()
 @bot.tree.command(name="admin_add", description=get_command_description("admin_add"))
-@app_commands.describe(user=get_parameter_description("user"), amount=get_parameter_description("amount"), konto=get_parameter_description("konto"))
+@app_commands.describe(user="User", amount="Amount", konto="balance/bank")
 async def admin_add(inter: discord.Interaction, user: discord.Member, amount: int, konto: str):
     if not await check_changelog_and_module(inter, "economy"):
         return
@@ -3519,7 +3381,7 @@ async def admin_add(inter: discord.Interaction, user: discord.Member, amount: in
 
 @app_commands.guild_only()
 @bot.tree.command(name="admin_remove", description=get_command_description("admin_remove"))
-@app_commands.describe(user=get_parameter_description("user"), amount=get_parameter_description("amount"), konto=get_parameter_description("konto"))
+@app_commands.describe(user="User", amount="Amount", konto="balance/bank")
 async def admin_remove(inter: discord.Interaction, user: discord.Member, amount: int, konto: str):
     if not await check_changelog_and_module(inter, "economy"):
         return
@@ -3541,7 +3403,7 @@ async def admin_remove(inter: discord.Interaction, user: discord.Member, amount:
 
 @app_commands.guild_only()
 @bot.tree.command(name="admin_setincome", description=get_command_description("admin_setincome"))
-@app_commands.describe(role=get_parameter_description("role"), amount=get_parameter_description("income_amount"))
+@app_commands.describe(role="Role", amount="Daily income amount")
 async def admin_setincome(inter: discord.Interaction, role: discord.Role, amount: int):
     if not await check_changelog_and_module(inter, "economy"):
         return
@@ -3579,7 +3441,7 @@ async def admin_listincome(inter: discord.Interaction):
 
 @app_commands.guild_only()
 @bot.tree.command(name="admin_removeincome", description=get_command_description("admin_removeincome"))
-@app_commands.describe(role=get_parameter_description("role"))
+@app_commands.describe(role="Role")
 async def admin_removeincome(inter: discord.Interaction, role: discord.Role):
     if not await check_changelog_and_module(inter, "economy"):
         return
@@ -3627,7 +3489,6 @@ async def collect_cmd(inter: discord.Interaction):
     log_econ(inter.guild.id, log_msg, inter.user.id)
     await inter.response.send_message(embed=embed)
 
-# /work - Idź do pracy za pieniądze (cooldown 1 godzina)
 @app_commands.guild_only()
 @bot.tree.command(name="work", description=get_command_description("work"))
 async def work_cmd(inter: discord.Interaction):
@@ -3653,7 +3514,7 @@ async def work_cmd(inter: discord.Interaction):
 
 @app_commands.guild_only()
 @bot.tree.command(name="setwork", description=get_command_description("setwork"))
-@app_commands.describe(min=get_parameter_description("min_amount"), max=get_parameter_description("max_amount"))
+@app_commands.describe(min="Min", max="Max")
 async def setwork_cmd(inter: discord.Interaction, min: int, max: int):
     if not await check_changelog_and_module(inter, "economy"):
         return
@@ -3672,7 +3533,7 @@ async def setwork_cmd(inter: discord.Interaction, min: int, max: int):
 
 @app_commands.guild_only()
 @bot.tree.command(name="steal", description=get_command_description("steal"))
-@app_commands.describe(user=get_parameter_description("steal_target"))
+@app_commands.describe(user="Who to steal from?")
 async def steal_cmd(inter: discord.Interaction, user: discord.Member):
     if not await check_changelog_and_module(inter, "economy"):
         return
@@ -3722,7 +3583,7 @@ async def steal_cmd(inter: discord.Interaction, user: discord.Member):
 
 @app_commands.guild_only()
 @bot.tree.command(name="check", description=get_command_description("check"))
-@app_commands.describe(user=get_parameter_description("user"), show_bank=get_parameter_description("show_bank"))
+@app_commands.describe(user="User", show_bank="Show bank balance (admin only)")
 async def check_cmd(inter: discord.Interaction, user: discord.Member, show_bank: bool = False):
     if not await check_changelog_and_module(inter, "economy"):
         return
@@ -3765,16 +3626,12 @@ active_gambling_sessions = {}
 
 def is_user_in_game(guild_id, user_id):
     eco = get_user_eco(guild_id, user_id)
-    in_game = eco.get('in_game', False)
-    if in_game:
-        print(f"🎮 DEBUG: is_user_in_game({guild_id}, {user_id}) = {in_game} - User is stuck in game!")
-    return in_game
+    return eco.get('in_game', False)
 
 def set_user_game(guild_id, user_id, val: bool):
     eco = get_user_eco(guild_id, user_id)
     eco['in_game'] = val
     update_user_eco(guild_id, user_id, eco)
-    print(f"🎮 DEBUG: set_user_game({guild_id}, {user_id}, {val}) - User game state: {val}")
 
 async def block_game(inter, *user_ids):
     for uid in user_ids:
@@ -3814,19 +3671,19 @@ class RPSView(ui.View):
     async def interaction_check(self, interaction):
         return interaction.user.id in [self.starter.id, self.target.id if self.target else self.starter.id]
 
-    @ui.button(label="🪨", style=ButtonStyle.primary, row=0)
+    @ui.button(label=translation_manager.get_text("buttons.rock", None, None), style=ButtonStyle.primary, row=0)
     async def rock(self, interaction: discord.Interaction, button: ui.Button):
         await self._choose(interaction, "rock")
 
-    @ui.button(label="📄", style=ButtonStyle.primary, row=0)
+    @ui.button(label=translation_manager.get_text("buttons.paper", None, None), style=ButtonStyle.primary, row=0)
     async def paper(self, interaction: discord.Interaction, button: ui.Button):
         await self._choose(interaction, "paper")
 
-    @ui.button(label="✂️", style=ButtonStyle.primary, row=0)
+    @ui.button(label=translation_manager.get_text("buttons.scissors", None, None), style=ButtonStyle.primary, row=0)
     async def scissors(self, interaction: discord.Interaction, button: ui.Button):
         await self._choose(interaction, "scissors")
 
-    @ui.button(label="❌ Decline", style=ButtonStyle.danger, row=1)
+    @ui.button(label=translation_manager.get_text("buttons.decline_game", None, None), style=ButtonStyle.danger, row=1)
     async def decline(self, interaction: discord.Interaction, button: ui.Button):
         if self.stopped: return
         eco_starter = get_user_eco(self.guild_id, self.starter.id)
@@ -3988,16 +3845,9 @@ def rps_winner(a, b):
     if (a, b) in [('rock','scissors'), ('paper','rock'), ('scissors','paper')]: return 1
     return 2
 
-# =====================================
-# KOMENDY HAZARDOWE & GRY
-# =====================================
-# System gier hazardowych i rozrywkowych
-# Kamień-papier-nożyce, ruletka, blackjack, mines
-
-# /rps - Kamień-papier-nożyce za pieniądze (vs bot lub inny gracz)
 @app_commands.guild_only()
 @bot.tree.command(name="rps", description=get_command_description("rps"))
-@app_commands.describe(amount=get_parameter_description("amount"), user=get_parameter_description("opponent"))
+@app_commands.describe(amount="Amount", user="Opponent (optional)")
 async def rps_cmd(inter: discord.Interaction, amount: int, user: Optional[discord.Member] = None):
     if not await check_changelog_and_module(inter, "economy"):
         return
@@ -4081,11 +3931,11 @@ class CFView(ui.View):
     async def interaction_check(self, interaction):
         return interaction.user.id == self.target.id
 
-    @ui.button(label="✅ Accept", style=ButtonStyle.success, row=0)
+    @ui.button(label="Accept bet", style=ButtonStyle.success, row=0)
     async def accept(self, inter: discord.Interaction, button: ui.Button):
         await self._resolve(inter)
 
-    @ui.button(label="❌ Decline", style=ButtonStyle.danger, row=0)
+    @ui.button(label="Decline", style=ButtonStyle.danger, row=0)
     async def decline(self, inter: discord.Interaction, button: ui.Button):
         eco_starter = get_user_eco(self.guild_id, self.starter.id)
         eco_target = get_user_eco(self.guild_id, self.target.id)
@@ -4152,10 +4002,9 @@ class CFView(ui.View):
         log_econ(self.guild_id, log_msg2, self.target.id)
         self.stop()
 
-# /cf - Rzut monetą (heads/tails) za pieniądze (vs bot lub inny gracz)
 @app_commands.guild_only()
 @bot.tree.command(name="cf", description=get_command_description("cf"))
-@app_commands.describe(amount=get_parameter_description("amount"), side=get_parameter_description("side"), user=get_parameter_description("opponent"))
+@app_commands.describe(amount="Amount", side="Side: heads/tails", user="Opponent (optional)")
 async def cf_cmd(inter: discord.Interaction, amount: int, side: str, user: Optional[discord.Member] = None):
     if not await check_changelog_and_module(inter, "economy"):
         return
@@ -4232,15 +4081,15 @@ class RouletteView(ui.View):
     async def interaction_check(self, interaction):
         return interaction.user.id == self.user.id
 
-    @ui.button(label="🟥 RED", style=ButtonStyle.danger, row=0)
+    @ui.button(label=translation_manager.get_text("buttons.red", None, None), style=ButtonStyle.danger, row=0)
     async def red(self, interaction: discord.Interaction, button: ui.Button):
         await self.spin(interaction, "red")
 
-    @ui.button(label="⬛ BLACK", style=ButtonStyle.primary, row=0)
+    @ui.button(label=translation_manager.get_text("buttons.black", None, None), style=ButtonStyle.primary, row=0)
     async def black(self, interaction: discord.Interaction, button: ui.Button):
         await self.spin(interaction, "black")
 
-    @ui.button(label="🟩 GREEN", style=ButtonStyle.success, row=0)
+    @ui.button(label=translation_manager.get_text("buttons.green", None, None), style=ButtonStyle.success, row=0)
     async def green(self, interaction: discord.Interaction, button: ui.Button):
         await self.spin(interaction, "green")
 
@@ -4269,21 +4118,21 @@ class RouletteView(ui.View):
         if win:
             reward = self.bet * mult
             eco['balance'] += reward
-            roulette_title = translation_manager.get_text("gambling.roulette_title", self.user.id, self.guild_id)
-            roulette_win_text = translation_manager.get_text("gambling.roulette_desc_win", self.user.id, self.guild_id, color=win_color.upper(), amount=reward - self.bet, result=wheel[spin_idx])
+            roulette_title = translation_manager.get_text("gambling.roulette_title", None, None)
+            roulette_win_text = translation_manager.get_text("gambling.roulette_desc_win", None, None, color=win_color.upper(), amount=reward - self.bet, result=wheel[spin_idx])
             embed = Embed(title=roulette_title, description=roulette_win_text, color=0x22dd66)
         else:
             lost = int(self.bet * 0.9)
             eco['balance'] += self.bet - lost
-            roulette_title = translation_manager.get_text("gambling.roulette_title", self.user.id, self.guild_id)
-            roulette_lose_text = translation_manager.get_text("gambling.roulette_desc_lose", self.user.id, self.guild_id, color=win_color.upper(), amount=lost, result=wheel[spin_idx])
+            roulette_title = translation_manager.get_text("gambling.roulette_title", None, None)
+            roulette_lose_text = translation_manager.get_text("gambling.roulette_desc_lose", None, None, color=win_color.upper(), amount=lost, result=wheel[spin_idx])
             embed = Embed(title=roulette_title, description=roulette_lose_text, color=0xdd2222)
         update_user_eco(self.guild_id, self.user.id, eco)
         if win:
-            log_msg = translation_manager.get_text("logging.gambling_roulette_win", self.user.id, self.guild_id, user=self.user.mention, color=color, amount=reward - self.bet)
+            log_msg = translation_manager.get_text("logging.gambling_roulette_win", None, None, user=self.user.mention, color=color, amount=reward - self.bet)
             log_econ(self.guild_id, log_msg, self.user.id)
         else:
-            log_msg = translation_manager.get_text("logging.gambling_roulette_loss", self.user.id, self.guild_id, user=self.user.mention, color=color, amount=lost)
+            log_msg = translation_manager.get_text("logging.gambling_roulette_loss", None, None, user=self.user.mention, color=color, amount=lost)
             log_econ(self.guild_id, log_msg, self.user.id)
         
         await self.msg.edit(content=None, embed=embed, view=None)
@@ -4306,10 +4155,9 @@ class RouletteView(ui.View):
         set_user_game(self.guild_id, self.user.id, False)
         self.stop()
 
-# /roulette - Ruletka (red/black x2, green x10)
 @app_commands.guild_only()
 @bot.tree.command(name="roulette", description=get_command_description("roulette"))
-@app_commands.describe(amount=get_parameter_description("amount"))
+@app_commands.describe(amount="Amount")
 async def roulette_cmd(inter: discord.Interaction, amount: int):
     if not await check_changelog_and_module(inter, "economy"):
         return
@@ -4351,7 +4199,7 @@ class BlackjackView(ui.View):
             aces -= 1
         return total
 
-    @ui.button(label="🃏 HIT", style=ButtonStyle.primary, row=0)
+    @ui.button(label=translation_manager.get_text("buttons.hit", None, None), style=ButtonStyle.primary, row=0)
     async def hit(self, inter: discord.Interaction, button: ui.Button):
         if self.stopped: return
         self.p_hand.append(self.deck.pop())
@@ -4362,7 +4210,7 @@ class BlackjackView(ui.View):
         else:
             await self.update_msg(inter)
 
-    @ui.button(label="✋ STAND", style=ButtonStyle.success, row=0)
+    @ui.button(label=translation_manager.get_text("buttons.stand", None, None), style=ButtonStyle.success, row=0)
     async def stand(self, inter: discord.Interaction, button: ui.Button):
         if self.stopped: return
         while self.value(self.d_hand) < 17:
@@ -4448,14 +4296,14 @@ class BlackjackView(ui.View):
         blackjack_title = translation_manager.get_text("gambling.blackjack_title", self.player.id, self.guild_id)
         embed = Embed(
             title=blackjack_title,
-            description=translation_manager.get_text("gambling.blackjack_cards", self.player.id, self.guild_id, hand=self.p_hand, value=pv, dealer=dv),
+            description=translation_manager.get_text("gambling.blackjack_cards", hand=self.p_hand, value=pv, dealer=dv),
             color=0x3366ff
         )
         await self.msg.edit(embed=embed, view=self)
 
     async def on_timeout(self):
         try:
-            timeout_text = translation_manager.get_text("gambling.blackjack_timeout", self.player.id, self.guild_id)
+            timeout_text = translation_manager.get_text("gambling.blackjack_timeout")
             await self.msg.edit(embed=Embed(description=timeout_text, color=0xFFA500), view=None)
             eco = get_user_eco(self.guild_id, self.player.id)
             eco['balance'] += int(self.bet * 0.5)
@@ -4470,10 +4318,9 @@ class BlackjackView(ui.View):
         self.stopped = True
         self.stop()
 
-# /blackjack - Blackjack 1v1 przeciwko botowi
 @app_commands.guild_only()
 @bot.tree.command(name="blackjack", description=get_command_description("blackjack"))
-@app_commands.describe(amount=get_parameter_description("amount"))
+@app_commands.describe(amount="Amount")
 async def blackjack_cmd(inter: discord.Interaction, amount: int):
     if not await check_changelog_and_module(inter, "economy"):
         return
@@ -4602,7 +4449,7 @@ class MinesView(ui.View):
                 item.style = ButtonStyle.secondary
         await interaction.response.edit_message(embed=Embed(
             title=translation_manager.get_text("gambling.mines_win_title", self.user.id, self.guild_id),
-            description=translation_manager.get_text("gambling.mines_win_all", self.user.id, self.guild_id, amount=win - self.bet, multiplier=self.get_multiplier(), board=board),
+            description=translation_manager.get_text("gambling.mines_win_all", amount=win - self.bet, multiplier=self.get_multiplier(), board=board),
             color=0x22dd66
         ), view=self)
         log_econ(self.guild_id, translation_manager.get_text("logs.mines_played_won", self.user.id, self.guild_id, user=self.user.mention, amount=win - self.bet, mines=self.minecount), self.user.id)
@@ -4638,7 +4485,7 @@ class MinesView(ui.View):
                 item.style = ButtonStyle.secondary
         await interaction.response.edit_message(embed=Embed(
             title=translation_manager.get_text("gambling.mines_win_title", self.user.id, self.guild_id),
-            description=translation_manager.get_text("gambling.mines_win_partial", self.user.id, self.guild_id, amount=win - self.bet, revealed=len(self.revealed), multiplier=self.get_multiplier(), board=board),
+            description=translation_manager.get_text("gambling.mines_win_partial", amount=win - self.bet, revealed=len(self.revealed), multiplier=self.get_multiplier(), board=board),
             color=0x22dd66
         ), view=self)
         log_econ(self.guild_id, translation_manager.get_text("logs.mines_played_won", self.user.id, self.guild_id, user=self.user.mention, amount=win - self.bet, mines=self.minecount), self.user.id)
@@ -4677,7 +4524,7 @@ class MinesView(ui.View):
                 item.style = ButtonStyle.secondary
         await interaction.response.edit_message(embed=Embed(
             title=translation_manager.get_text("gambling.mines_lose_title", self.user.id, self.guild_id),
-            description=translation_manager.get_text("gambling.mines_lose", self.user.id, self.guild_id, board=board, amount=self.bet),
+            description=translation_manager.get_text("gambling.mines_lose", board=board, amount=self.bet),
             color=0xdd2222
         ), view=self)
         log_econ(self.guild_id, translation_manager.get_text("logs.mines_played_lost", self.user.id, self.guild_id, user=self.user.mention, amount=self.bet, mines=self.minecount), self.user.id)
@@ -4702,7 +4549,7 @@ class MinesView(ui.View):
                     item.label = "⬜"
                     item.style = ButtonStyle.secondary
         try:
-            timeout_text = translation_manager.get_text("gambling.mines_timeout", self.user.id, self.guild_id, amount=loss)
+            timeout_text = translation_manager.get_text("gambling.mines_timeout", amount=loss)
             await self.msg.edit(embed=Embed(description=timeout_text, color=0xFFA500), view=self)
         except:
             pass
@@ -4711,10 +4558,9 @@ class MinesView(ui.View):
         self.stopped = True
         self.stop()
 
-# /mines - Gra Mines 5x5 (unikaj min, zbieraj mnożniki)
 @app_commands.guild_only()
 @bot.tree.command(name="mines", description=get_command_description("mines"))
-@app_commands.describe(amount=get_parameter_description("amount"), mines=get_parameter_description("mines"))
+@app_commands.describe(amount="Amount", mines="Number of mines (1-20)")
 async def mines_cmd(inter: discord.Interaction, amount: int, mines: int):
     if not await check_changelog_and_module(inter, "economy"):
         return
@@ -4762,7 +4608,7 @@ class ShopItem(app_commands.Choice):
 
 @app_commands.guild_only()
 @bot.tree.command(name="admin_shopadd", description=get_command_description("admin_shopadd"))
-@app_commands.describe(role=get_parameter_description("role_to_buy"), price=get_parameter_description("price"), alias=get_parameter_description("alias"))
+@app_commands.describe(role="Role to buy", price="Price", alias="Alias/shortcut to use in /buy")
 @app_commands.checks.has_permissions(administrator=True)
 async def shopadd_cmd(inter: discord.Interaction, role: discord.Role, price: int, alias: str):
     if not await check_changelog_and_module(inter, "economy"):
@@ -4791,7 +4637,7 @@ async def shopadd_cmd(inter: discord.Interaction, role: discord.Role, price: int
 
 @app_commands.guild_only()
 @bot.tree.command(name="admin_shopremove", description=get_command_description("admin_shopremove"))
-@app_commands.describe(alias=get_parameter_description("alias_remove"))
+@app_commands.describe(alias="Role alias to remove")
 @app_commands.checks.has_permissions(administrator=True)
 async def shopremove_cmd(inter: discord.Interaction, alias: str):
     if not await check_changelog_and_module(inter, "economy"):
@@ -4852,7 +4698,7 @@ class BuyAliasAutocomplete(app_commands.Transform):
 
 @app_commands.guild_only()
 @bot.tree.command(name="buy", description=get_command_description("buy"))
-@app_commands.describe(alias=get_parameter_description("alias_buy"))
+@app_commands.describe(alias="Role alias to buy (use /shop to see list)")
 @app_commands.autocomplete(alias=BuyAliasAutocomplete.autocomplete)
 async def buy_cmd(inter: discord.Interaction, alias: str):
     if not await check_changelog_and_module(inter, "economy"):
@@ -4882,7 +4728,6 @@ async def buy_cmd(inter: discord.Interaction, alias: str):
     purchase_log = translation_manager.get_text("logging.role_purchase", None, None, username=inter.user.name, display_name=inter.user.display_name, user_id=inter.user.id, role_name=role.name, price=item['price'], alias=alias)
     log_econ(inter.guild.id, purchase_log, inter.user.id)
 
-# /shop - Pokaż sklep z rolami do kupienia
 @app_commands.guild_only()
 @bot.tree.command(name="shop", description=get_command_description("shop"))
 async def shop_cmd(inter: discord.Interaction):
@@ -4942,7 +4787,7 @@ class EconResetConfirm(ui.View):
     async def interaction_check(self, interaction: discord.Interaction):
         return interaction.user.id == self.author.id
 
-    @ui.button(label="❗ Reset Economy", style=discord.ButtonStyle.danger)
+    @ui.button(label=translation_manager.get_text("buttons.reset_economy", None, None), style=discord.ButtonStyle.danger)
     async def confirm(self, interaction: discord.Interaction, button: ui.Button):
         reset_econ_data(self.guild_id)
         log_econ(self.guild_id, translation_manager.get_text("logs.economy_reset", self.author.id, self.guild_id, admin=f"{self.author.name} ({self.author.display_name}) [{self.author.id}]"))
@@ -4952,7 +4797,7 @@ class EconResetConfirm(ui.View):
         )
         self.stop()
 
-    @ui.button(label="❌ Cancel", style=discord.ButtonStyle.secondary)
+    @ui.button(label=translation_manager.get_text("buttons.cancel", None, None), style=discord.ButtonStyle.secondary)
     async def cancel(self, interaction: discord.Interaction, button: ui.Button):
         economy_reset_cancelled_text = translation_manager.get_text("economy.economy_reset_cancelled", interaction.user.id, interaction.guild_id)
         await interaction.response.edit_message(
@@ -4973,42 +4818,6 @@ async def resetecon_cmd(inter: discord.Interaction):
     )
 
 @app_commands.guild_only()
-# /checkgamestate - Sprawdź stan gry użytkownika (debug)
-@bot.tree.command(name="checkgamestate", description="Check if user is stuck in game state (debug)")
-@app_commands.describe(user="User to check (optional, defaults to yourself)")
-async def checkgamestate(inter: discord.Interaction, user: discord.Member = None):
-    if not await check_changelog_and_module(inter, "economy"):
-        return
-    
-    target_user = user or inter.user
-    is_in_game = is_user_in_game(inter.guild.id, target_user.id)
-    
-    embed = discord.Embed(
-        title="🎮 Game State Check",
-        color=discord.Color.red() if is_in_game else discord.Color.green()
-    )
-    
-    embed.add_field(
-        name="User",
-        value=target_user.mention,
-        inline=True
-    )
-    
-    embed.add_field(
-        name="Status",
-        value="🔴 IN GAME (STUCK)" if is_in_game else "🟢 NOT IN GAME",
-        inline=True
-    )
-    
-    if is_in_game:
-        embed.add_field(
-            name="Solution",
-            value="Use `/resetgamestates` (admin only) to fix",
-            inline=False
-        )
-    
-    await inter.response.send_message(embed=embed, ephemeral=True)
-
 @bot.tree.command(name="resetgamestates", description=get_command_description("resetgamestates"))
 async def resetgamestates(inter: discord.Interaction):
     if not await check_changelog_and_module(inter, "economy"):
@@ -5126,7 +4935,7 @@ async def rrlist(interaction: discord.Interaction):
 # —– RR DELETE —–
 @app_commands.guild_only()
 @bot.tree.command(name="rrdelete", description=get_command_description("rrdelete"))
-@app_commands.describe(message_id=get_parameter_description("message_id"))
+@app_commands.describe(message_id="Message ID (text)")
 async def rrdelete(
     interaction: discord.Interaction,
     message_id: str
@@ -5214,7 +5023,7 @@ def format_time(dt_str):
     return dt.strftime("%Y-%m-%d %H:%M")
 
 @bot.tree.command(name="shortenlink", description=get_command_description("shortenlink"))
-@app_commands.describe(url=get_parameter_description("url"), custom=get_parameter_description("custom"))
+@app_commands.describe(url="Link to shorten", custom="Custom ending (optional, e.g. 'my link')")
 async def shorten(interaction: discord.Interaction, url: str, custom: str = None):
     user_id = str(interaction.user.id)
     username = str(interaction.user.name)
@@ -5310,7 +5119,7 @@ async def extend(interaction: discord.Interaction, short: str, days: int = None,
         await interaction.response.send_message(error_text, ephemeral=True)
 
 @bot.tree.command(name="deletelink", description=get_command_description("deletelink"))
-@app_commands.describe(short=get_parameter_description("short"))
+@app_commands.describe(short="Short code of your link")
 async def delete(interaction: discord.Interaction, short: str):
     user_id = str(interaction.user.id)
     data = {
@@ -5746,17 +5555,7 @@ async def on_member_remove(member):
         reason = translation_manager.get_text("logging.member_since", None, member.guild.id, date=join.strftime('%Y-%m-%d %H:%M:%S'))
     else:
         reason = translation_manager.get_text("logging.no_join_date", None, member.guild.id)
-        await log_action(member.guild, "MemberLeave", member, reason=reason)
+    await log_action(member.guild, "MemberLeave", member, reason=reason)
 
 
-# =====================================
-# URUCHOMIENIE BOTA
-# =====================================
-# Sprawdza token Discord i uruchamia bota
-
-if __name__ == '__main__':
-    if not token:
-        print('❌ DISCORD_TOKEN not found in environment variables!')
-        sys.exit(1)
-    print('🚀 Starting Kotka Testy V2 Bot...')
-    bot.run(token)
+bot.run(token)
