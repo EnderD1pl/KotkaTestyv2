@@ -735,14 +735,20 @@ YTDL_FORMAT_OPTIONS = {
     'audio_format': 'mp3',
     'outtmpl': '%(extractor)s-%(id)s-%(title)s.%(ext)s',
     'restrictfilenames': True,
-    'noplaylist': False,
-    'nocheckcertificate': True,
-    'ignoreerrors': False,
+    'noplaylist': False,  # Enables playlists
+    'playlistend': 50,   # Limit playlists to 50 tracks (prevents huge playlists)
+    'max_filesize': None,  # No file size limit
+    'no_check_certificate': True,
+    'ignoreerrors': True,  # Continue on errors instead of stopping
+    'extract_flat': False,  # Full extraction for playlists
+    'writesubtitles': False,
+    'writeautomaticsub': False,
     'logtostderr': False,
     'source_address': '0.0.0.0',
     'prefer_ffmpeg': True,
     'postprocessor_args': ['-threads', '4'],
-    'socket_timeout': 10
+    'socket_timeout': 30,  # Increased timeout for long videos
+    'http_chunk_size': 10485760  # 10MB chunks for better streaming
 }
 
 FFMPEG_PATH = os.path.join(os.path.dirname(__file__), 'ffmpeg_new', 'bin', 'ffmpeg.exe')

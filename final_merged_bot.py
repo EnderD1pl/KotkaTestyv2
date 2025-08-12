@@ -767,14 +767,20 @@ YTDL_FORMAT_OPTIONS = {
     'audio_format': 'mp3',
     'outtmpl': '%(extractor)s-%(id)s-%(title)s.%(ext)s',
     'restrictfilenames': True,
-    'noplaylist': False,
-    'nocheckcertificate': True,
-    'ignoreerrors': False,
+    'noplaylist': False,  # Enables playlists
+    'playlistend': 50,   # Limit playlists to 50 tracks (prevents huge playlists)
+    'max_filesize': None,  # No file size limit
+    'no_check_certificate': True,
+    'ignoreerrors': True,  # Continue on errors instead of stopping
+    'extract_flat': False,  # Full extraction for playlists
+    'writesubtitles': False,
+    'writeautomaticsub': False,
     'logtostderr': False,
     'source_address': '0.0.0.0',
     'prefer_ffmpeg': True,
     'postprocessor_args': ['-threads', '4'],
-    'socket_timeout': 10
+    'socket_timeout': 30,  # Increased timeout for long videos
+    'http_chunk_size': 10485760  # 10MB chunks for better streaming
 }
 
 FFMPEG_PATH = os.path.join(os.path.dirname(__file__), 'ffmpeg_new', 'bin', 'ffmpeg.exe')
@@ -854,27 +860,75 @@ class YTDLSource(discord.PCMVolumeTransformer):
     @classmethod
     async def from_url(cls, url, *, loop=None, stream=True, volume=0.5):
         loop = loop or asyncio.get_event_loop()
-        data = await loop.run_in_executor(None, lambda: ytdl.extract_info(url, download=not stream))
-
-        if 'entries' in data:
-            sources = [cls._create_source(entry, stream, volume) for entry in data['entries'] if entry]
-            return [s for s in sources if s is not None]
-        else:
-            source = cls._create_source(data, stream, volume)
-            return [source] if source is not None else []
+        try:
+            print(f"🎵 DEBUG: Extracting info from URL: {url}")
+            data = await loop.run_in_executor(None, lambda: ytdl.extract_info(url, download=not stream))
+            
+            if not data:
+                print(f"❌ No data extracted from URL: {url}")
+                return []
+                
+            # Check if it's a playlist
+            if 'entries' in data:
+                entries = [entry for entry in data['entries'] if entry is not None]
+                print(f"🎵 DEBUG: Found playlist with {len(entries)} entries")
+                
+                if len(entries) == 0:
+                    print(f"❌ Playlist is empty or all entries failed")
+                    return []
+                    
+                sources = []
+                for i, entry in enumerate(entries):
+                    print(f"🎵 DEBUG: Processing playlist entry {i+1}/{len(entries)}: {entry.get('title', 'Unknown')}")
+                    source = cls._create_source(entry, stream, volume)
+                    if source:
+                        sources.append(source)
+                    else:
+                        print(f"⚠️ Failed to create source for entry {i+1}")
+                        
+                print(f"🎵 DEBUG: Successfully created {len(sources)} sources from playlist")
+                return sources
+            else:
+                print(f"🎵 DEBUG: Single video: {data.get('title', 'Unknown')}")
+                source = cls._create_source(data, stream, volume)
+                return [source] if source is not None else []
+                
+        except Exception as e:
+            print(f"❌ Error in YTDLSource.from_url: {e}")
+            print(f"❌ URL that failed: {url}")
+            return []
 
     @classmethod
     def _create_source(cls, data, stream, volume):
         try:
+            if not data or not data.get('url'):
+                print(f"⚠️ Invalid data or missing URL: {data}")
+                return None
+                
+            title = data.get('title', 'Unknown')
+            duration = data.get('duration', 0)
+            
+            # Skip very long videos (over 3 hours = 10800 seconds)
+            if duration and duration > 10800:
+                print(f"⚠️ Skipping very long video: {title} ({duration}s)")
+                return None
+                
             filename = data['url'] if stream else ytdl.prepare_filename(data)
+            print(f"🎵 DEBUG: Creating FFmpeg source for: {title}")
+            
             ffmpeg = discord.FFmpegPCMAudio(
                 filename,
                 executable=FFMPEG_PATH,
                 **FFMPEG_OPTIONS
             )
-            return cls(ffmpeg, data=data, volume=volume)
+            
+            source = cls(ffmpeg, data=data, volume=volume)
+            print(f"✅ Successfully created source for: {title}")
+            return source
+            
         except Exception as e:
-            print(f"Error creating audio source: {e}")
+            title = data.get('title', 'Unknown') if data else 'Unknown'
+            print(f"❌ Error creating audio source for '{title}': {e}")
             return None
 
 def get_music_player(guild_id):
@@ -3202,7 +3256,9 @@ async def play_music(interaction: discord.Interaction, query: str):
         valid_sources = [s for s in sources if s is not None]
         if not valid_sources:
             track_processing_error_text = translation_manager.get_text("music.track_processing_error", interaction.user.id, interaction.guild_id)
-            return await interaction.followup.send(track_processing_error_text)
+            # Add information about limits
+            limits_text = "\n\n📋 **Limits:**\n• Playlists: max 50 tracks\n• Video length: max 3 hours\n• Some private/restricted videos may fail"
+            return await interaction.followup.send(track_processing_error_text + limits_text)
 
         added_count = 0
         for source in valid_sources:
